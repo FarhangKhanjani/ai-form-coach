@@ -167,6 +167,7 @@ td select{padding:4px 6px;font-size:13px;max-width:118px}
         <button class="btn quiet" id="exportBtn">Export session (JSON)</button>
         <button class="btn quiet" id="stopBtn">Stop camera</button>
       </div>
+      <p class="fps" id="live"></p>
       <p class="fps" id="fps"></p>
     </section>
 
@@ -258,6 +259,7 @@ let rep = { state: "top" }, reps = [], repNo = 0;
 let ghostMode = "follow", tempoStart = 0;
 let frames = 0, fpsT = performance.now();
 let cueTimer = null;
+let detectErrors = 0;
 let th = loadThresholds();
 
 /* ---------- thresholds ---------- */
@@ -384,7 +386,14 @@ async function start() {
     return;
   }
   video.srcObject = stream;
-  await video.play();
+  try {
+    await video.play();
+  } catch (e) {
+    stream.getTracks().forEach(tr => tr.stop()); stream = null;
+    btn.disabled = false; btn.textContent = "Start camera"; setStatus("Camera off");
+    $("error").textContent = "The camera opened but the video couldn't start. Reload the page and try again.";
+    return;
+  }
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const mirror = facing === "user";
@@ -411,6 +420,7 @@ function stop() {
   setBanner(""); setCue("");
   setStatus("Camera off");
   $("fps").textContent = "";
+  $("live").textContent = "";
 }
 
 function beginCalibration() {
@@ -434,7 +444,12 @@ function loop() {
     lastVideoTime = video.currentTime;
     const now = performance.now();
     let res = null;
-    try { res = landmarker.detectForVideo(video, now); } catch (e) { res = null; }
+    try { res = landmarker.detectForVideo(video, now); detectErrors = 0; }
+    catch (e) {
+      res = null;
+      if (++detectErrors === 1) console.error("Pose detection failed:", e);
+      if (detectErrors === 30) setBanner("Pose detection keeps failing. Try the other model or another browser (Chrome works best).");
+    }
     process(res, now / 1000);
     frames++;
     if (now - fpsT > 1000) {
@@ -522,6 +537,7 @@ function process(res, t) {
   drawGhost(P, gp, tGap);
   drawUser(P, flags);
   updateMeter(p, p >= 1);
+  $("live").textContent = `Live: depth ${Math.round(p * 100)}% · knees ${kr.toFixed(2)}× · heel lift ${(hl * 100).toFixed(1)}% · shift ${(shift * 100).toFixed(0)}%`;
 
   // ----- reps
   stepRep(t, r, p, kr, hl, shift, tGap, flags);
@@ -572,8 +588,11 @@ function calibrateStep(ok) {
 /* ---------- rep detection + rules ---------- */
 function stepRep(t, r, p, kr, hl, shift, tGap, flags) {
   if (rep.state === "top") {
+    // remember when the hips were last at their highest, so down time includes the start of the descent
+    if (rep.topR === undefined || r > rep.topR - 0.03) { rep.topT = t; rep.topR = Math.max(rep.topR ?? r, r); }
     if (r < START_R) {
-      rep = { state: "down", start: t, minR: r, bottomT: t, minKr: Infinity, maxHl: 0, maxShift: 0, frames: [] };
+      const start = t - rep.topT < 3 ? rep.topT : t;
+      rep = { state: "down", start, minR: r, bottomT: t, minKr: Infinity, maxHl: 0, maxShift: 0, frames: [] };
       setCue("Down slowly", "");
     }
     return;
@@ -589,7 +608,7 @@ function stepRep(t, r, p, kr, hl, shift, tGap, flags) {
   else if (flags.heels) setCue("Heels down", "bad");
 
   if (rep.state === "down" && r > rep.minR + 0.12) rep.state = "up";
-  if (t - rep.start > 12) { rep = { state: "top" }; return; }
+  if (t - rep.start > 12) { rep = { state: "top" }; setCue(""); return; }
   if (r > TOP_R) { finishRep(t, tGap); rep = { state: "top" }; }
 }
 
