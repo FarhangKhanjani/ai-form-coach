@@ -2,7 +2,7 @@ import { PoseSmoother, type Pose, type WorldPose } from "../../pose/types";
 import { Calibrator, framingProblem, type Calibration } from "./calibration";
 import { liveFlags, squatMetrics, type SquatMetrics } from "./metrics";
 import { RepDetector, type Rep } from "./reps";
-import type { SquatThresholds } from "./config";
+import type { CameraView, SquatThresholds } from "./config";
 
 const FEET_MOVED = 0.25;      // feet moved this far (fraction of leg length) → recalibrate
 const FEET_MOVED_FRAMES = 15;
@@ -23,7 +23,7 @@ export class SquatCoach {
   cal: Calibration | null = null;
   private movedFrames = 0;
 
-  constructor(public th: SquatThresholds, public aspect: number) {}
+  constructor(public th: SquatThresholds, public aspect: number, public view: CameraView = "front") {}
 
   recalibrate() {
     this.cal = null; this.calibrator.reset(); this.smoother.reset(); this.reps.reset(); this.movedFrames = 0;
@@ -35,7 +35,7 @@ export class SquatCoach {
     const pose = this.smoother.push(raw);
 
     if (!this.cal) {
-      const st = this.calibrator.push(pose, this.aspect);
+      const st = this.calibrator.push(pose, this.aspect, this.view);
       if (st.done) {
         this.cal = st.cal; this.reps.reset(); this.movedFrames = 0;
         return { phase: "tracking", pose, cal: st.cal, metrics: null, flags: null, banner: null, event: "calibrated" };
@@ -43,7 +43,7 @@ export class SquatCoach {
       return { phase: "calibrating", pose, progress: st.progress, banner: null, message: st.message };
     }
 
-    const problem = framingProblem(pose, this.aspect);
+    const problem = framingProblem(pose, this.aspect, this.view);
     if (problem) return { phase: "tracking", pose, cal: this.cal, metrics: null, flags: null, banner: problem, event: null };
 
     const m = squatMetrics(pose, this.cal, this.th, this.aspect);
@@ -55,8 +55,8 @@ export class SquatCoach {
       }
     } else this.movedFrames = 0;
 
-    const flags = liveFlags(m, this.th);
-    const ev = this.reps.step(t, m, pose, world, this.th);
+    const flags = liveFlags(m, this.th, this.view);
+    const ev = this.reps.step(t, m, pose, world, this.th, this.view);
     return { phase: "tracking", pose, cal: this.cal, metrics: m, flags, banner: null, event: ev };
   }
 }

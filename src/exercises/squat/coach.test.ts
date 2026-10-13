@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { SquatCoach } from "./coach";
-import { DEFAULTS } from "./config";
+import { DEFAULTS, type CameraView } from "./config";
 import type { Rep } from "./reps";
 import { scriptedPose, seededNoise, type Segment } from "./synthetic";
 
 const FPS = 30, ASPECT = 4 / 3;
 
-function run(script: Segment[]) {
-  const coach = new SquatCoach({ ...DEFAULTS }, ASPECT);
+function run(script: Segment[], view: CameraView = "front") {
+  const coach = new SquatCoach({ ...DEFAULTS }, ASPECT, view);
   const noise = seededNoise();
   const reps: Rep[] = [];
   const messages = new Set<string>();
@@ -77,5 +77,14 @@ describe("squat coach on scripted front-view squats", () => {
     expect(scored).toHaveLength(1);
     expect(scored[0].issues).toEqual([]);
     expect(reps.filter(r => !r.trackingOk).every(r => r.issues.length === 0)).toBe(true);
+  });
+
+  it("side view: calibrates without facing the camera and only scores what the side can see", () => {
+    const { reps, calibrations } = run([
+      hold(3, { turned: true }), rep("knees", { turned: true, err: { caving: true } }), hold(1, { turned: true }),
+      rep("shallow", { turned: true, err: { shallow: true } }), hold(1, { turned: true })
+    ], "side");
+    expect(calibrations).toBe(1);
+    expect(reps.map(r => r.issues)).toEqual([[], ["not_deep_enough"]]);
   });
 });

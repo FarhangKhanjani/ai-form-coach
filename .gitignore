@@ -5,3 +5,4 @@ node_modules/
 *session-*.json
 dist/
 test-results/
+public/mediapipe/

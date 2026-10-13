@@ -1,4 +1,5 @@
 import { L, mid, type Pose } from "../../pose/types";
+import type { CameraView } from "./config";
 
 export interface Calibration {
   /** Averaged standing pose (normalized x/y). */
@@ -26,7 +27,12 @@ const MAX_SHIFT0 = 0.15;      // hips must sit over the feet, fraction of hip wi
 const MAX_FEET_TILT = 0.08;   // left vs right ankle height, fraction of leg length
 
 /** Problems with the current frame that stop calibration or tracking, as a user-facing message. */
-export function framingProblem(p: Pose, aspect: number): string | null {
+export function framingProblem(p: Pose, aspect: number, view: CameraView = "front"): string | null {
+  if (view !== "front") {
+    // From the side the far leg is often hidden behind the near one: one visible side is enough.
+    const pairs: [number, number][] = [[L.shoulderL, L.shoulderR], [L.hipL, L.hipR], [L.kneeL, L.kneeR], [L.ankleL, L.ankleR]];
+    return pairs.every(([a, b]) => Math.max(p[a].v, p[b].v) > 0.5) ? null : "Make sure the whole body, including the feet, is in view.";
+  }
   if (!KEY.every(i => p[i].v > 0.5)) return "Step back until your whole body, including your feet, is in view.";
   const sw = Math.hypot((p[L.shoulderL].x - p[L.shoulderR].x) * aspect, p[L.shoulderL].y - p[L.shoulderR].y);
   const sm = mid(p[L.shoulderL], p[L.shoulderR]), hm = mid(p[L.hipL], p[L.hipR]);
@@ -48,8 +54,8 @@ export class Calibrator {
 
   reset() { this.samples = []; this.prev = null; this.message = null; }
 
-  push(p: Pose, aspect: number): CalStep {
-    const problem = framingProblem(p, aspect);
+  push(p: Pose, aspect: number, view: CameraView = "front"): CalStep {
+    const problem = framingProblem(p, aspect, view);
     if (problem) { this.samples = []; this.prev = null; return { done: false, progress: 0, message: problem }; }
     const cur = p.map(q => ({ x: q.x, y: q.y }));
     if (this.prev) {
@@ -67,22 +73,25 @@ export class Calibrator {
       y: this.samples.reduce((a, f) => a + f[i].y, 0) / n
     }));
     this.samples = [];
-    const result = buildCalibration(pts, aspect);
+    const result = buildCalibration(pts, aspect, view);
     if (typeof result === "string") { this.message = result; return { done: false, progress: 0, message: result }; }
     return { done: true, cal: result };
   }
 }
 
 /** Builds a calibration from an averaged standing pose, or returns why it can't be used. */
-export function buildCalibration(pts: { x: number; y: number }[], aspect: number): Calibration | string {
+export function buildCalibration(pts: { x: number; y: number }[], aspect: number, view: CameraView = "front"): Calibration | string {
   const hip = mid(pts[L.hipL], pts[L.hipR]), knee = mid(pts[L.kneeL], pts[L.kneeR]), ankle = mid(pts[L.ankleL], pts[L.ankleR]);
   const standGap = knee.y - hip.y, legLen = ankle.y - hip.y;
-  const hipWidth = Math.abs(pts[L.hipL].x - pts[L.hipR].x);
+  // From the side the hips overlap, so hip width is near zero; it is only used by front-view checks.
+  const hipWidth = Math.max(Math.abs(pts[L.hipL].x - pts[L.hipR].x), view === "front" ? 0 : 0.01);
   if (standGap < 0.03 || hipWidth < 0.01) return "You're quite far away. Move a little closer and hold still.";
   const shift0 = (hip.x - ankle.x) / hipWidth;
-  if (Math.abs(shift0) > MAX_SHIFT0) return "Stand centered over your feet, facing the camera straight on, and hold still.";
-  if (Math.abs(pts[L.ankleL].y - pts[L.ankleR].y) > MAX_FEET_TILT * legLen)
-    return "One foot looks higher than the other. Face the camera straight on, phone upright, and hold still.";
+  if (view === "front") {
+    if (Math.abs(shift0) > MAX_SHIFT0) return "Stand centered over your feet, facing the camera straight on, and hold still.";
+    if (Math.abs(pts[L.ankleL].y - pts[L.ankleR].y) > MAX_FEET_TILT * legLen)
+      return "One foot looks higher than the other. Face the camera straight on, phone upright, and hold still.";
+  }
   return {
     pts, standGap, legLen, hipWidth, shift0,
     tilt0: (pts[L.hipL].y - pts[L.hipR].y) / (hipWidth * aspect),

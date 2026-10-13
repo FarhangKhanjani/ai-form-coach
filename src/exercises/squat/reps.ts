@@ -1,7 +1,7 @@
 import { L, clamp, type Pose, type WorldPose } from "../../pose/types";
 import { roundAngles, squatAngles } from "../../pose/angles";
 import type { SquatMetrics } from "./metrics";
-import { ERROR_ORDER, type SquatError, type SquatThresholds } from "./config";
+import { CHECKS_BY_VIEW, ERROR_ORDER, type CameraView, type SquatError, type SquatThresholds } from "./config";
 
 const START_R = 0.78, TOP_R = 0.85;   // hip-to-knee gap ratios that start and finish a rep
 const MIN_DEPTH_R = 0.6;              // a movement that never gets below this isn't a squat
@@ -47,7 +47,7 @@ export class RepDetector {
   get repCount() { return this.count; }
 
   /** Feed one frame. Returns "start" when a rep begins, a Rep when one ends, or null. */
-  step(t: number, m: SquatMetrics, pose: Pose, world: WorldPose | null, th: SquatThresholds): "start" | Rep | null {
+  step(t: number, m: SquatMetrics, pose: Pose, world: WorldPose | null, th: SquatThresholds, view: CameraView = "front"): "start" | Rep | null {
     if (!this.active) {
       // Remember when the hips were last at their highest so down time includes the start of the descent.
       if (m.r > this.topR - 0.03) { this.topT = t; this.topR = Math.max(this.topR, m.r); }
@@ -80,7 +80,7 @@ export class RepDetector {
     this.active = null;
     this.topR = m.r; this.topT = t;
     if (a.minR > MIN_DEPTH_R) return null;
-    const problems = trackingProblems(a.frames);
+    const problems = trackingProblems(a.frames, view);
     const rep: Rep = {
       n: ++this.count,
       start: a.start, end: t,
@@ -100,7 +100,7 @@ export class RepDetector {
       trackingProblems: problems,
       frames: a.frames
     };
-    if (rep.trackingOk) rep.issues = scoreRep(a, rep.downTime, th);
+    if (rep.trackingOk) rep.issues = scoreRep(a, rep.downTime, th).filter(e => CHECKS_BY_VIEW[view].has(e));
     return rep;
   }
 }
@@ -117,15 +117,19 @@ function scoreRep(a: Active, downTime: number, th: SquatThresholds): SquatError[
 }
 
 /** Reasons a rep's keypoints can't be trusted (session 1: glitches were scored as reps). */
-export function trackingProblems(frames: RepFrame[]): string[] {
+export function trackingProblems(frames: RepFrame[], view: CameraView = "front"): string[] {
   const out: string[] = [];
   if (frames.length < 10) out.push(`only ${frames.length} frames`);
   const legs = [L.hipL, L.hipR, L.kneeL, L.kneeR, L.ankleL, L.ankleR];
   const off = frames.filter(f => legs.some(i => f.lm[i][0] < -0.02 || f.lm[i][0] > 1.02 || f.lm[i][1] < -0.02 || f.lm[i][1] > 1.02)).length;
   if (off) out.push(`legs outside the frame in ${off} frames`);
-  const crossed = frames.filter(f => f.lm[L.ankleL][0] - f.lm[L.ankleR][0] <= 0.01).length;
-  if (crossed) out.push(`left/right feet swapped or overlapping in ${crossed} frames`);
-  const lowVis = frames.filter(f => f.lm[L.ankleL][3] < 0.5 || f.lm[L.ankleR][3] < 0.5).length;
+  if (view === "front") {
+    const crossed = frames.filter(f => f.lm[L.ankleL][0] - f.lm[L.ankleR][0] <= 0.01).length;
+    if (crossed) out.push(`left/right feet swapped or overlapping in ${crossed} frames`);
+  }
+  const lowVis = frames.filter(f => view === "front"
+    ? f.lm[L.ankleL][3] < 0.5 || f.lm[L.ankleR][3] < 0.5
+    : Math.max(f.lm[L.ankleL][3], f.lm[L.ankleR][3]) < 0.5).length;
   if (frames.length && lowVis > 0.3 * frames.length) out.push("feet poorly visible");
   return out;
 }

@@ -1,6 +1,6 @@
 import { L, clamp, mid, type Pose } from "../../pose/types";
 import type { Calibration } from "./calibration";
-import type { SquatThresholds } from "./config";
+import type { CameraView, SquatThresholds } from "./config";
 
 export interface SquatMetrics {
   /** Hip-to-knee gap ÷ standing gap: 1 standing, 0 hips level with knees. */
@@ -44,12 +44,12 @@ export function squatMetrics(s: Pose, cal: Calibration, th: SquatThresholds, asp
 }
 
 /** Rule checks for the current frame (only meaningful once the user is bent). */
-export function liveFlags(m: SquatMetrics, th: SquatThresholds) {
-  const bent = m.p > 0.4;
+export function liveFlags(m: SquatMetrics, th: SquatThresholds, view: CameraView = "front") {
+  const bent = m.p > 0.4, front = view === "front";
   return {
-    knees: bent && (m.kneeRatio < th.kneeMin || Math.max(m.kneeInside.L, m.kneeInside.R) > th.kneeInMax),
-    heels: bent && m.heelLift !== null && m.heelLift > th.heelMax,
-    shift: bent && Math.abs(m.shift) > th.shiftMax,
-    tilt: bent && Math.abs(m.hipTilt) > th.hipTiltMax
+    knees: bent && front && (m.kneeRatio < th.kneeMin || Math.max(m.kneeInside.L, m.kneeInside.R) > th.kneeInMax),
+    heels: bent && view !== "diagonal" && m.heelLift !== null && m.heelLift > th.heelMax,
+    shift: bent && front && Math.abs(m.shift) > th.shiftMax,
+    tilt: bent && front && Math.abs(m.hipTilt) > th.hipTiltMax
   };
 }

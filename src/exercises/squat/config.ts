@@ -1,6 +1,16 @@
 // Squat thresholds. All are starting values for testing ([Placeholder] in docs/exercises/squat.md)
 // except where that document cites a source. The coach sets final values; keep them editable.
 
+/** Where the camera stands relative to the person. Front-view checks (knees, shift, hip tilt) are skipped for other views. */
+export type CameraView = "front" | "side" | "diagonal";
+
+/** Which checks each view can measure (docs/exercises/squat.md §3). */
+export const CHECKS_BY_VIEW: Record<CameraView, ReadonlySet<SquatError>> = {
+  front: new Set<SquatError>(["knees_caving", "heels_lifting", "not_deep_enough", "hip_tilt", "shifting_sideways", "too_fast"]),
+  side: new Set<SquatError>(["heels_lifting", "not_deep_enough", "too_fast"]),
+  diagonal: new Set<SquatError>(["not_deep_enough", "too_fast"])
+};
+
 export interface SquatThresholds {
   /** Depth target: hip-to-knee vertical gap left at the bottom, fraction of the standing gap. */
   depthGap: number;

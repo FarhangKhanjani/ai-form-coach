@@ -93,7 +93,8 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || undefined,
   args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"]
 });
-const page = await browser.newPage({ viewport: { width: 412, height: 915 } });
+const context = await browser.newContext({ viewport: { width: 412, height: 915 } });
+const page = await context.newPage();
 const errors = [];
 page.on("pageerror", e => errors.push(String(e)));
 page.on("console", m => { if (m.type() === "error") errors.push(m.text()); });
@@ -144,6 +145,21 @@ try {
   const sessionHeads = await page.locator(".rep-head").allTextContents();
   check(sessionHeads.length === 2, "session page shows the saved reps");
   await page.screenshot({ path: path.join(ROOT, "test-results", "session.png"), fullPage: true }).catch(() => {});
+
+  // Real pose model, served by the app itself: no requests to jsDelivr or Google.
+  const real = await page.context().newPage();
+  const outside = [];
+  real.on("request", r => { const u = new URL(r.url()); if (!["localhost", "vxfglaogomdfyuscflnd.supabase.co", "fonts.googleapis.com", "fonts.gstatic.com"].includes(u.hostname)) outside.push(u.hostname); });
+  real.on("pageerror", e => errors.push(String(e)));
+  await real.route(SUPABASE, fakeSupabase);
+  await real.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, body: "" }));
+  await real.goto(base + "#/workout/squat");
+  await real.click("text=Start camera");
+  await real.waitForFunction(() => /frames per second/.test(document.querySelector(".fps:last-of-type")?.textContent || "") || document.querySelector(".error")?.textContent, null, { timeout: 90000 });
+  const err = await real.textContent(".intro .error");
+  check(!err, `real model loads from the app's own files${err ? ": " + err : ""}`);
+  check(outside.length === 0, `no requests to outside hosts${outside.length ? ": " + [...new Set(outside)].join(", ") : ""}`);
+  await real.close();
 } catch (e) {
   check(false, `flow crashed: ${e.message}`);
   await page.screenshot({ path: path.join(ROOT, "test-results", "failure.png"), fullPage: true }).catch(() => {});
