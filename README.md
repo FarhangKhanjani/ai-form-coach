@@ -4,6 +4,10 @@ A camera-based workout coach: it tracks your body in real time, shows a transluc
 
 Current stage: a single-file browser prototype for the **squat** (`squat-coach.html`). Full context, decisions and backlog: [`docs/AI-Form-Coach-Project-Context.md`](docs/AI-Form-Coach-Project-Context.md).
 
+- What correct form is, per exercise, with sources: [`docs/exercises/`](docs/exercises/)
+- Test session write-ups: [`docs/sessions/`](docs/sessions/)
+- Database (Supabase) schema: [`supabase/migrations/`](supabase/migrations/); setup incl. Google sign-in: [`docs/setup-supabase.md`](docs/setup-supabase.md)
+
 ## Try it
 
 The camera needs a secure page, so don't double-click the file.
@@ -28,6 +32,10 @@ Everything is measured relative to **your own standing pose** captured during ca
 The "Live" line under the Session buttons shows these numbers as you move.
 
 ## Tests
+
+Database: `sh supabase/tests/run.sh` applies the migrations to a throwaway local Postgres 16 and checks the access rules (each user sees only their own data, coaches only consented data, no self-promotion to coach).
+
+App:
 
 ```
 npm install playwright          # or use a global install
