@@ -7,6 +7,7 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = path.join(ROOT, "dist");
@@ -23,10 +24,11 @@ const fakeModel = `${synth.outputFiles[0].text}
     { kind: "rep", dur: 4, down: 2.5, err: { caving: true } }, { kind: "hold", dur: 1.5 }
   ];
   const noise = Synth.seededNoise();
-  let t0 = null;
+  let t0 = null, last = -1;
   window.__FAKE_LANDMARKER__ = {
     detectForVideo(_v, ts) {
-      if (t0 === null) t0 = ts;
+      if (t0 === null || ts < last) t0 = ts;   // timestamps restart for each imported video
+      last = ts;
       const pose = Synth.scriptedPose(script, (ts - t0) / 1000, noise);
       window.__SCRIPT_DONE__ = !pose;
       const p = pose || Synth.scriptedPose(script.slice(0, 1), 0, noise);
@@ -146,6 +148,31 @@ try {
   check(sessionHeads.length === 2, "session page shows the saved reps");
   await page.screenshot({ path: path.join(ROOT, "test-results", "session.png"), fullPage: true }).catch(() => {});
 
+  // Import a video: same scripted poses, played back by video time
+  const videoFile = path.join(ROOT, "test-results", "squat-test.webm");
+  if (!fs.existsSync(videoFile)) execFileSync("ffmpeg", ["-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:rate=30", "-t", "14", "-c:v", "libvpx", "-b:v", "200k", "-g", "15", videoFile]);
+  await page.goto(base + "#/");
+  await page.click("text=Import a video");
+  await page.setInputFiles('input[type="file"]', videoFile);
+  await page.selectOption("select >> nth=1", "coach");
+  await page.fill('input[placeholder^="e.g. Coach A, permission"]', "Coach A, permission by email");
+  await page.locator(".check").last().locator("input").check();
+  await page.screenshot({ path: path.join(ROOT, "test-results", "import-form.png"), fullPage: true });
+  await page.click("text=Analyze video");
+  await page.waitForSelector("text=Label the reps", { timeout: 120000 });
+  await page.screenshot({ path: path.join(ROOT, "test-results", "import-review.png"), fullPage: true });
+  const importHeads = await page.locator(".rep-head").allTextContents();
+  check(importHeads.length === 2 && /Clean/.test(importHeads[0]) && /Knees caving/.test(importHeads[1]), `import finds both reps: ${JSON.stringify(importHeads)}`);
+  await page.locator(".rep-card").nth(1).getByRole("button", { name: "Knees caving" }).click();
+  await page.locator(".rep-card").nth(1).locator("textarea").fill("left knee drifts in at the bottom");
+  await page.click("text=Save to my account");
+  await page.waitForURL(/#\/session\//);
+  const imp = db.sessions[1];
+  check(imp?.source === "video_import" && imp.source_meta?.consentConfirmed === true && imp.source_meta?.origin === "coach" && imp.camera_view === "front", "imported session saved with source, origin and consent");
+  const impReps = db.reps.filter(r => r.session_id === imp?.id);
+  const impLabels = db.rep_labels.filter(l => impReps.some(r => r.id === l.rep_id));
+  check(impReps.length === 2 && impLabels.length === 1 && impLabels[0].note === "left knee drifts in at the bottom", "imported reps and the labeled rep's note saved");
+
   // Real pose model, served by the app itself: no requests to jsDelivr or Google.
   const real = await page.context().newPage();
   const outside = [];
@@ -159,6 +186,14 @@ try {
   const err = await real.textContent(".intro .error");
   check(!err, `real model loads from the app's own files${err ? ": " + err : ""}`);
   check(outside.length === 0, `no requests to outside hosts${outside.length ? ": " + [...new Set(outside)].join(", ") : ""}`);
+  const shortVideo = path.join(ROOT, "test-results", "empty-2s.webm");
+  if (!fs.existsSync(shortVideo)) execFileSync("ffmpeg", ["-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=320x240:rate=30", "-t", "2", "-c:v", "libvpx", "-b:v", "200k", "-g", "15", shortVideo]);
+  await real.goto(base + "#/import/squat");
+  await real.setInputFiles('input[type="file"]', shortVideo);
+  await real.locator(".check").last().locator("input").check();
+  await real.click("text=Analyze video");
+  await real.waitForSelector("text=Label the reps", { timeout: 240000 });
+  check(await real.locator("text=0 reps found").count() === 1, "real model analyzes a video file end to end (no person: 0 reps)");
   await real.close();
 } catch (e) {
   check(false, `flow crashed: ${e.message}`);

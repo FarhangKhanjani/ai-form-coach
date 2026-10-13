@@ -2,12 +2,16 @@ import { supabase } from "../supabase";
 import type { Rep } from "../exercises/squat/reps";
 import type { Calibration } from "../exercises/squat/calibration";
 import type { SquatThresholds } from "../exercises/squat/config";
-import { RULE_SET } from "../exercises/squat/config";
+import { RULE_SET, type CameraView } from "../exercises/squat/config";
 
 /** A workout recorded in the browser, before it's saved. Video is never part of it. */
 export interface WorkoutRecord {
   exercise: "squat";
-  view: "front";
+  view: CameraView;
+  /** "live" = phone camera in the app; "video_import" = a video file analyzed on the device (never uploaded). */
+  source: "live" | "video_import";
+  /** For imports: file name, origin, person, consent (see supabase/migrations/20261013180000_session_source.sql). */
+  sourceMeta?: Record<string, unknown>;
   startedAt: string;
   endedAt: string;
   poseModel: string;
@@ -20,9 +24,9 @@ export interface WorkoutRecord {
 }
 
 /** The user's own judgment of a rep. */
-export interface RepLabel { correct: boolean; errors: string[] }
+export interface RepLabel { correct: boolean; errors: string[]; note?: string }
 
-export const APP_VERSION = "0.3.0";
+export const APP_VERSION = "0.4.0";
 
 export async function currentUserId(): Promise<string> {
   const { data } = await supabase.auth.getSession();
@@ -48,7 +52,7 @@ export async function saveWorkout(w: WorkoutRecord, labels: Map<number, RepLabel
   const session = check(await supabase.from("sessions").insert({
     user_id: userId,
     exercise_id: w.exercise,
-    rule_set_id: await ruleSetId(),
+    rule_set_id: w.view === RULE_SET.view ? await ruleSetId() : null,
     camera_view: w.view,
     started_at: w.startedAt,
     ended_at: w.endedAt,
@@ -59,7 +63,9 @@ export async function saveWorkout(w: WorkoutRecord, labels: Map<number, RepLabel
     device: w.device,
     thresholds: w.thresholds,
     calibration: { history: w.calibrations.map(c => ({ t: c.t, ...c.cal })) },
-    export_format_version: 2
+    export_format_version: 2,
+    source: w.source,
+    source_meta: w.sourceMeta ?? null
   }).select("id").single()) as { id: string };
 
   try {
@@ -84,7 +90,7 @@ export async function saveWorkout(w: WorkoutRecord, labels: Map<number, RepLabel
         }))));
       }
       const labelRows = [...labels].filter(([n]) => idByN.has(n)).map(([n, l]) => ({
-        rep_id: idByN.get(n), labeler_id: userId, labeler_role: "athlete", correct: l.correct, error_codes: l.errors
+        rep_id: idByN.get(n), labeler_id: userId, labeler_role: "athlete", correct: l.correct, error_codes: l.errors, note: l.note || null
       }));
       if (labelRows.length) check(await supabase.from("rep_labels").insert(labelRows));
     }
@@ -95,24 +101,25 @@ export async function saveWorkout(w: WorkoutRecord, labels: Map<number, RepLabel
   return session.id;
 }
 
-export interface SessionSummary { id: string; started_at: string; exercise_id: string; camera_view: string; reps: { issues: string[]; tracking_ok: boolean }[] }
+export interface SessionSummary { id: string; started_at: string; exercise_id: string; camera_view: string; source: string; reps: { issues: string[]; tracking_ok: boolean }[] }
 
 export async function listSessions(): Promise<SessionSummary[]> {
   return check(await supabase.from("sessions")
-    .select("id, started_at, exercise_id, camera_view, reps(issues, tracking_ok)")
+    .select("id, started_at, exercise_id, camera_view, source, reps(issues, tracking_ok)")
     .order("started_at", { ascending: false }).limit(50)) as SessionSummary[];
 }
 
 export interface SessionDetail {
   id: string; started_at: string; ended_at: string | null; exercise_id: string; camera_view: string; pose_model: string | null;
+  source: string; source_meta: Record<string, unknown> | null;
   thresholds: SquatThresholds | null;
   reps: { id: string; n: number; down_time_s: number; up_time_s: number; metrics: Rep["metrics"]; issues: string[]; tracking_ok: boolean;
-    rep_labels: { correct: boolean; error_codes: string[]; labeler_id: string; labeler_role: string }[] }[];
+    rep_labels: { correct: boolean; error_codes: string[]; labeler_id: string; labeler_role: string; note: string | null }[] }[];
 }
 
 export async function getSession(id: string): Promise<SessionDetail> {
   const s = check(await supabase.from("sessions")
-    .select("id, started_at, ended_at, exercise_id, camera_view, pose_model, thresholds, reps(id, n, down_time_s, up_time_s, metrics, issues, tracking_ok, rep_labels(correct, error_codes, labeler_id, labeler_role))")
+    .select("id, started_at, ended_at, exercise_id, camera_view, pose_model, thresholds, source, source_meta, reps(id, n, down_time_s, up_time_s, metrics, issues, tracking_ok, rep_labels(correct, error_codes, labeler_id, labeler_role, note))")
     .eq("id", id).single()) as SessionDetail;
   s.reps.sort((a, b) => a.n - b.n);
   return s;
@@ -122,7 +129,7 @@ export async function getSession(id: string): Promise<SessionDetail> {
 export async function setLabel(repId: string, label: RepLabel) {
   const userId = await currentUserId();
   check(await supabase.from("rep_labels").upsert(
-    { rep_id: repId, labeler_id: userId, labeler_role: "athlete", correct: label.correct, error_codes: label.errors },
+    { rep_id: repId, labeler_id: userId, labeler_role: "athlete", correct: label.correct, error_codes: label.errors, note: label.note || null },
     { onConflict: "rep_id,labeler_id" }));
 }
 

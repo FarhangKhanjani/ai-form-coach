@@ -13,6 +13,10 @@ export async function homePage() {
         h("span", { class: "start-title" }, "Squat"),
         h("span", { class: "start-sub" }, "Bodyweight or goblet · front camera"),
         h("span", { class: "start-go" }, "Start →")),
+      h("a", { class: "start-card secondary", href: "#/import/squat" },
+        h("span", { class: "start-title small-title" }, "Import a video"),
+        h("span", { class: "start-sub" }, "Analyze a squat video on this device and label each rep"),
+        h("span", { class: "start-go" }, "Open →")),
       h("p", { class: "muted small" }, "Lunge and dumbbell press come next."),
       h("h2", {}, "Your sessions"),
       list));
@@ -25,7 +29,8 @@ export async function homePage() {
       const scored = s.reps.filter(r => r.tracking_ok);
       const clean = scored.filter(r => !r.issues.length).length;
       return h("a", { class: "row-link", href: `#/session/${s.id}` },
-        h("span", {}, h("b", {}, s.exercise_id === "squat" ? "Squat" : s.exercise_id), " · ", fmtDate(s.started_at)),
+        h("span", {}, h("b", {}, s.exercise_id === "squat" ? "Squat" : s.exercise_id), " · ", fmtDate(s.started_at),
+          s.source === "video_import" ? h("span", { class: "tag" }, `video · ${s.camera_view}`) : null),
         h("span", { class: "muted" }, `${scored.length} reps · ${clean} clean`));
     }));
   } catch (e) {
@@ -40,7 +45,8 @@ export async function sessionPage(id: string) {
   try { s = await getSession(id); } catch (e) { body.replaceChildren(h("p", { class: "error" }, errorText(e))); return; }
   const scored = s.reps.filter(r => r.tracking_ok);
   body.replaceChildren(
-    h("p", { class: "muted" }, `${fmtDate(s.started_at)} · ${s.camera_view} view · ${s.pose_model ?? ""}`),
+    h("p", { class: "muted" }, `${fmtDate(s.started_at)} · ${s.camera_view} view · ${s.pose_model ?? ""}` +
+      (s.source === "video_import" ? ` · imported video "${String(s.source_meta?.fileName ?? "")}" (${String(s.source_meta?.origin ?? "")})` : "")),
     h("div", { class: "stats" },
       h("div", {}, h("b", {}, scored.length), h("span", {}, "Reps")),
       h("div", {}, h("b", {}, scored.filter(r => !r.issues.length).length), h("span", {}, "Clean")),
@@ -54,7 +60,8 @@ export async function sessionPage(id: string) {
         `Depth ${r.metrics.depthPct}% · knees ${Number(r.metrics.kneeRatio).toFixed(2)}× · down ${Number(r.down_time_s).toFixed(1)} s`),
       anglesText(r.metrics.anglesAtBottom),
       labelEditor(r.rep_labels[0] ? { correct: r.rep_labels[0].correct, errors: r.rep_labels[0].error_codes } : null,
-        l => l ? setLabel(r.id, l) : undefined)))),
+        l => l ? setLabel(r.id, { ...l, note: r.rep_labels[0]?.note ?? undefined }) : undefined),
+      r.rep_labels[0]?.note ? h("p", { class: "rep-metrics" }, `Why: ${r.rep_labels[0].note}`) : null))),
     h("div", { class: "actions" },
       h("button", { class: "btn quiet", onclick: async () => download(`squat-session-${s.started_at.slice(0, 16).replace(/[:T]/g, "")}.json`, await exportSession(s.id)) }, "Download JSON"),
       h("button", { class: "btn quiet danger", onclick: async () => {

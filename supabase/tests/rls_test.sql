@@ -22,6 +22,15 @@ insert into public.reps (id, session_id, user_id, n, start_ms, end_ms, metrics, 
 insert into public.rep_keypoints (rep_id, user_id, frames) values ('20000000-0000-0000-0000-000000000001', auth.uid(), '[{"t":0,"lm":[]}]');
 insert into public.rep_labels (rep_id, labeler_id, labeler_role, correct) values ('20000000-0000-0000-0000-000000000001', auth.uid(), 'athlete', true);
 do $$ begin assert (select count(*) from public.reps) = 1, 'A sees own rep'; end $$;
+-- An imported video needs confirmed consent
+do $$ begin
+  begin insert into public.sessions (user_id, exercise_id, camera_view, started_at, source, source_meta)
+    values (auth.uid(), 'squat', 'side', now(), 'video_import', '{"fileName": "x.mp4"}');
+    raise exception 'import without consent allowed';
+  exception when check_violation then null; end;
+end $$;
+insert into public.sessions (user_id, exercise_id, camera_view, started_at, source, source_meta)
+  values (auth.uid(), 'squat', 'side', now(), 'video_import', '{"fileName": "x.mp4", "consentConfirmed": true}');
 
 -- A cannot make themselves coach
 do $$ begin

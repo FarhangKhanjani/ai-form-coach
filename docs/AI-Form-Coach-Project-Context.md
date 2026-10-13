@@ -49,6 +49,8 @@ When you work on this project:
 | D9 | First prototype: single HTML file in the browser | Works on laptop and phone, no app store, fastest to iterate |
 | D10 | App v0.2: Vite + TypeScript web app (installable), hosted on GitHub Pages; Supabase (EU, Frankfurt) for sign-in (email + Google) and data | Still no app store; real accounts and a database for labeled reps; Supabase was already the plan for the backend |
 | D11 | Rule thresholds live in `docs/exercises/<exercise>.md` with a source or a [Placeholder] tag for every number, and as versioned `rule_sets` rows | Keeps "what is correct" traceable; old sessions keep the rules they were scored with |
+| D12 | MediaPipe runtime and models are served by the app itself (`scripts/fetch-assets.mjs`, models pinned by SHA-256) | No runtime dependency on jsDelivr/Google; the phone never contacts Google; model can't change under us. Same tracking speed |
+| D13 | Our own labeled dataset is built with the in-app **Import video** screen (videos analyzed on the device, never uploaded; origin and consent stored per session) and live sessions; no scraped online video | No public dataset fits (docs/datasets.md); same pose model and rep logic as live, so numbers are comparable |
 
 Rejected for the first version: machine exercises (low value, frame occludes joints, gym-only), bench press (user can't see the screen while lying down, bar path needs a second model).
 
@@ -265,6 +267,7 @@ Landmark indices (MediaPipe): 0 nose, 11/12 shoulders, 13/14 elbows, 15/16 wrist
   - reps with < 10 frames, legs off-screen, feet swapped or feet poorly visible are kept but marked `tracking_ok = false` and not scored;
   - depth has a tolerance band (5% of the standing gap);
   - down time starts where the hips began to drop.
+- **Video import (v0.4):** `#/import/squat` analyzes a video file frame by frame (30 fps, seeking) with a separate pose-model instance, runs the same `SquatCoach` with the chosen camera view, then shows each rep with playback, labels and a "why" note. Saved with `sessions.source = 'video_import'` and `source_meta` (file name, origin, person, consent; migration 3 requires consent). Non-front views skip front-only checks (`CHECKS_BY_VIEW` in `config.ts`).
 - **3D angles (v0.3):** knee/hip flexion, trunk and shin lean, trunk-minus-shin from world landmarks at the bottom of each rep (`src/pose/angles.ts`, stored in `reps.metrics.anglesAtBottom`). Shown, not scored yet.
 - **Data saved per session:** frame size, pose model, thresholds used, calibration history; per rep: timing, metrics, issues, 2D + world keypoints per frame, user labels. Schema: `supabase/migrations/`.
 - **Export format version 2** (JSON download): `{ app: "ai-form-coach", version: 2, ...workout, reps: [{ ...rep, label }] }`. Metric names changed from v1 (`shiftPct` is now % of hip width, not stance width), hence the new version; `analysis/analyze_session.py` reads v1.

@@ -63,7 +63,7 @@ Even then we would train a **small classifier on keypoints** (under 1M parameter
 **Plan:**
 1. Collect published numbers (started in `docs/exercises/squat.md` §7).
 2. *(Done in v0.3.)* The app computes the angles the papers report from MediaPipe's 3D world landmarks (`src/pose/angles.ts`): knee flexion, hip flexion, trunk lean, shin lean and trunk-minus-shin, per side, at the bottom of every rep (`metrics.anglesAtBottom`), plus live on screen. Not yet used for scoring: first we check how close they are to the lab values and to a side view. Caveat: "vertical" is the camera's vertical, so the phone must stand upright.
-3. Reference recordings: front + side at the same time, good reps and deliberate mistakes.
+3. Reference recordings: front + side at the same time, good reps and deliberate mistakes. *(Tool done in v0.4: Import video; protocol in `docs/data-collection.md`.)*
 4. Set each limit where good and bad reps separate, and check it against the published ranges.
 5. Coach reviews the ranges and labels a test set. Measure how often the app agrees with the coach.
 6. Only if the rules plateau: train a small classifier.

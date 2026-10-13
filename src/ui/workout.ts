@@ -250,7 +250,7 @@ export function workoutPage(): () => void {
   finishBtn.addEventListener("click", () => {
     stopCamera();
     pendingWorkout = {
-      exercise: "squat", view: "front",
+      exercise: "squat", view: "front", source: "live",
       startedAt, endedAt: new Date().toISOString(),
       poseModel: poseModelId(modelName),
       frameWidth: canvas.width, frameHeight: canvas.height,
