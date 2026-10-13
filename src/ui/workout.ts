@@ -1,6 +1,7 @@
 import type { PoseLandmarker } from "@mediapipe/tasks-vision";
 import { getLandmarker, poseModelId, type ModelName } from "../pose/landmarker";
 import type { Pose, WorldPose } from "../pose/types";
+import { squatAngles } from "../pose/angles";
 import { SquatCoach } from "../exercises/squat/coach";
 import { DEFAULTS, ERROR_TEXT, type SquatThresholds } from "../exercises/squat/config";
 import { drawGhost, drawUser, tempoPhase } from "../exercises/squat/draw";
@@ -215,6 +216,10 @@ export function workoutPage(): () => void {
     const m = st.metrics;
     live.textContent = `Live: depth ${Math.round(m.p * 100)}% · knees ${m.kneeRatio.toFixed(2)}× · knee in ${Math.round(Math.max(m.kneeInside.L, m.kneeInside.R) * 100)}% · ` +
       `heel ${m.heelLift === null ? "–" : (m.heelLift * 100).toFixed(1) + "%"} · shift ${Math.round(m.shift * 100)}% · tilt ${Math.round(m.hipTilt * 100)}%`;
+    if (world) {
+      const a = squatAngles(world);
+      live.textContent += ` · knee ${Math.round((a.kneeFlex.L + a.kneeFlex.R) / 2)}° · hip ${Math.round((a.hipFlex.L + a.hipFlex.R) / 2)}° · trunk ${Math.round(a.trunkLean)}°`;
+    }
     const gp = prefs.ghost === "lead" ? tempoPhase(performance.now() / 1000 - tempoStart, th.minDown) : m.p;
     drawGhost(ctx, st.pose, st.cal, gp, th.depthGap);
     drawUser(ctx, st.pose, st.flags ?? {});

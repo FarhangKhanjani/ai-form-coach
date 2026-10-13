@@ -2,6 +2,16 @@ import type { RepLabel } from "../data/api";
 import { ERROR_ORDER, ERROR_TEXT, type SquatError } from "../exercises/squat/config";
 import { h } from "./dom";
 
+type Angles = { kneeFlex: { L: number; R: number }; hipFlex: { L: number; R: number }; trunkLean: number; trunkMinusShin: number } | null | undefined;
+
+/** Bottom-of-rep joint angles (3D), comparable with the lab values in docs/exercises/squat.md §7. */
+export function anglesText(a: Angles) {
+  if (!a) return null;
+  const avg = (v: { L: number; R: number }) => Math.round((v.L + v.R) / 2);
+  return h("p", { class: "rep-metrics" },
+    `Bottom angles: knee ${avg(a.kneeFlex)}° · hip ${avg(a.hipFlex)}° · trunk lean ${Math.round(a.trunkLean)}° · trunk vs shin ${a.trunkMinusShin > 0 ? "+" : ""}${Math.round(a.trunkMinusShin)}°`);
+}
+
 export function issuesText(issues: string[]) {
   return issues.length
     ? h("span", { class: "iss" }, issues.map(i => ERROR_TEXT[i as SquatError]?.name ?? i).join(", "))

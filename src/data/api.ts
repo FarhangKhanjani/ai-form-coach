@@ -22,7 +22,7 @@ export interface WorkoutRecord {
 /** The user's own judgment of a rep. */
 export interface RepLabel { correct: boolean; errors: string[] }
 
-export const APP_VERSION = "0.2.0";
+export const APP_VERSION = "0.3.0";
 
 export async function currentUserId(): Promise<string> {
   const { data } = await supabase.auth.getSession();

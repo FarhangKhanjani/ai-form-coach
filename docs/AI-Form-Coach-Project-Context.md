@@ -265,6 +265,7 @@ Landmark indices (MediaPipe): 0 nose, 11/12 shoulders, 13/14 elbows, 15/16 wrist
   - reps with < 10 frames, legs off-screen, feet swapped or feet poorly visible are kept but marked `tracking_ok = false` and not scored;
   - depth has a tolerance band (5% of the standing gap);
   - down time starts where the hips began to drop.
+- **3D angles (v0.3):** knee/hip flexion, trunk and shin lean, trunk-minus-shin from world landmarks at the bottom of each rep (`src/pose/angles.ts`, stored in `reps.metrics.anglesAtBottom`). Shown, not scored yet.
 - **Data saved per session:** frame size, pose model, thresholds used, calibration history; per rep: timing, metrics, issues, 2D + world keypoints per frame, user labels. Schema: `supabase/migrations/`.
 - **Export format version 2** (JSON download): `{ app: "ai-form-coach", version: 2, ...workout, reps: [{ ...rep, label }] }`. Metric names changed from v1 (`shiftPct` is now % of hip width, not stance width), hence the new version; `analysis/analyze_session.py` reads v1.
 

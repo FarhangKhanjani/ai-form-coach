@@ -1,4 +1,5 @@
 import { L, clamp, type Pose, type WorldPose } from "../../pose/types";
+import { roundAngles, squatAngles } from "../../pose/angles";
 import type { SquatMetrics } from "./metrics";
 import { ERROR_ORDER, type SquatError, type SquatThresholds } from "./config";
 
@@ -19,6 +20,8 @@ export interface Rep {
   metrics: {
     depthPct: number; minR: number; kneeRatio: number; kneeInMax: number;
     heelLiftPct: number | null; shiftPct: number; hipTiltPct: number;
+    /** Joint angles at the bottom of the rep from 3D world landmarks (null if the model gave none). */
+    anglesAtBottom: ReturnType<typeof roundAngles> | null;
   };
   issues: SquatError[];
   trackingOk: boolean;
@@ -27,7 +30,7 @@ export interface Rep {
 }
 
 interface Active {
-  start: number; minR: number; bottomT: number;
+  start: number; minR: number; bottomT: number; bottomWorld: WorldPose | null;
   minKr: number; maxKneeIn: number; maxHl: number | null; maxShift: number; maxTilt: number;
   frames: RepFrame[];
 }
@@ -50,7 +53,7 @@ export class RepDetector {
       if (m.r > this.topR - 0.03) { this.topT = t; this.topR = Math.max(this.topR, m.r); }
       if (m.r < START_R) {
         this.active = {
-          start: t - this.topT < 3 ? this.topT : t, minR: m.r, bottomT: t,
+          start: t - this.topT < 3 ? this.topT : t, minR: m.r, bottomT: t, bottomWorld: world,
           minKr: Infinity, maxKneeIn: -Infinity, maxHl: null, maxShift: 0, maxTilt: 0, frames: []
         };
         return "start";
@@ -63,7 +66,7 @@ export class RepDetector {
       lm: pose.map(q => [r4(q.x), r4(q.y), r4(q.z), r4(q.v)]),
       ...(world ? { world: world.map(q => [r4(q.x), r4(q.y), r4(q.z)]) } : {})
     });
-    if (m.r < a.minR) { a.minR = m.r; a.bottomT = t; }
+    if (m.r < a.minR) { a.minR = m.r; a.bottomT = t; a.bottomWorld = world; }
     if (m.p > 0.4) {
       a.minKr = Math.min(a.minKr, m.kneeRatio);
       a.maxKneeIn = Math.max(a.maxKneeIn, m.kneeInside.L, m.kneeInside.R);
@@ -89,7 +92,8 @@ export class RepDetector {
         kneeInMax: r4(isFinite(a.maxKneeIn) ? a.maxKneeIn : 0),
         heelLiftPct: a.maxHl === null ? null : Math.round(a.maxHl * 1000) / 10,
         shiftPct: Math.round(a.maxShift * 1000) / 10,
-        hipTiltPct: Math.round(a.maxTilt * 1000) / 10
+        hipTiltPct: Math.round(a.maxTilt * 1000) / 10,
+        anglesAtBottom: a.bottomWorld ? roundAngles(squatAngles(a.bottomWorld)) : null
       },
       issues: [],
       trackingOk: problems.length === 0,

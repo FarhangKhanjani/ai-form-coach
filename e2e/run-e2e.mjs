@@ -136,6 +136,8 @@ try {
   check(db.sessions.length === 1 && s.user_id === USER.id && s.exercise_id === "squat" && s.rule_set_id === "rule-set-v2", "session row saved with user, exercise, rule set");
   check(s.frame_width > 0 && s.frame_height > 0 && s.thresholds?.depthGap === 0.15 && s.calibration?.history?.length === 1, "session has frame size, thresholds, calibration");
   check(db.reps.length === 2 && db.reps[0].issues.length === 0 && db.reps[1].issues[0] === "knees_caving", "two reps saved with their issues");
+  const ang = db.reps[0].metrics.anglesAtBottom;
+  check(ang && Number.isFinite(ang.kneeFlex.L) && Number.isFinite(ang.trunkLean), `bottom-of-rep 3D angles saved: ${JSON.stringify(ang)}`);
   check(db.rep_keypoints.length === 2 && db.rep_keypoints[0].frames.length > 20 && db.rep_keypoints[0].frames[0].lm.length === 33 && db.rep_keypoints[0].frames[0].world?.length === 33, "keypoints (2D + world) saved per rep");
   check(db.rep_labels.length === 2 && db.rep_labels[0].correct === true && db.rep_labels[1].error_codes[0] === "knees_caving" && db.rep_labels.every(l => l.labeler_role === "athlete"), "user labels saved");
   await page.waitForSelector("text=Labeled");

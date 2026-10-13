@@ -1,6 +1,6 @@
 import { saveWorkout, type RepLabel, type WorkoutRecord } from "../data/api";
 import { h, mount, topbar, download, errorText } from "./dom";
-import { issuesText, labelEditor } from "./labels";
+import { anglesText, issuesText, labelEditor } from "./labels";
 import { pendingWorkout, clearPendingWorkout } from "./workout";
 
 /** JSON export of an unsaved workout (format version 2). */
@@ -48,6 +48,7 @@ export function summaryPage() {
         h("div", { class: "rep-head" }, h("b", {}, `Rep ${r.n}`),
           r.trackingOk ? issuesText(r.issues) : h("span", { class: "muted" }, "Tracking unreliable: " + r.trackingProblems.join(", "))),
         h("p", { class: "rep-metrics" }, `Depth ${r.metrics.depthPct}% · knees ${Number(r.metrics.kneeRatio).toFixed(2)}× · down ${r.downTime.toFixed(1)} s`),
+        anglesText(r.metrics.anglesAtBottom),
         labelEditor(null, l => { if (l) labels.set(r.n, l); else labels.delete(r.n); }, false)))),
       h("div", { class: "actions sticky" },
         saveBtn,

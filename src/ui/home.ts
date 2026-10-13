@@ -1,6 +1,6 @@
 import { listSessions, getProfile, getSession, setLabel, deleteSession, exportSession, type SessionDetail } from "../data/api";
 import { h, mount, topbar, fmtDate, download, errorText } from "./dom";
-import { labelEditor, issuesText } from "./labels";
+import { anglesText, labelEditor, issuesText } from "./labels";
 
 export async function homePage() {
   const list = h("div", { class: "list" }, h("p", { class: "muted" }, "Loading…"));
@@ -52,6 +52,7 @@ export async function sessionPage(id: string) {
         r.tracking_ok ? issuesText(r.issues) : h("span", { class: "muted" }, "Tracking unreliable, not scored")),
       h("p", { class: "rep-metrics" },
         `Depth ${r.metrics.depthPct}% · knees ${Number(r.metrics.kneeRatio).toFixed(2)}× · down ${Number(r.down_time_s).toFixed(1)} s`),
+      anglesText(r.metrics.anglesAtBottom),
       labelEditor(r.rep_labels[0] ? { correct: r.rep_labels[0].correct, errors: r.rep_labels[0].error_codes } : null,
         l => l ? setLabel(r.id, l) : undefined)))),
     h("div", { class: "actions" },
