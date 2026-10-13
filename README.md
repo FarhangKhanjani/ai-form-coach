@@ -10,6 +10,7 @@ Current stage: squat (front camera), with sign-up/sign-in (email or Google) and 
 
 - Project context, decisions, backlog: [`docs/AI-Form-Coach-Project-Context.md`](docs/AI-Form-Coach-Project-Context.md)
 - How a rep is judged (pose model vs rules, when to train a model): [`docs/how-scoring-works.md`](docs/how-scoring-works.md)
+- Datasets (what exists, licenses, what we can use): [`docs/datasets.md`](docs/datasets.md)
 - What correct form is, per exercise, with sources: [`docs/exercises/`](docs/exercises/)
 - Test session write-ups: [`docs/sessions/`](docs/sessions/)
 - Supabase setup incl. Google sign-in: [`docs/setup-supabase.md`](docs/setup-supabase.md)
