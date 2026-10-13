@@ -1,2 +1,5 @@
 tests/vendor/
 node_modules/
+# exported sessions contain body keypoints (personal data) - keep them out of this public repo
+sessions/
+*session-*.json
