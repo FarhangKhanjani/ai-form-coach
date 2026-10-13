@@ -4,4 +4,5 @@ Project context, decisions (don't reverse them silently), rule spec and backlog:
 
 Form standards per exercise (every threshold must cite a source or be tagged [Placeholder]): docs/exercises/
 
-Run `node tests/run-tests.mjs logic` after changing `squat-coach.html`, and `sh supabase/tests/run.sh` after changing `supabase/migrations/`.
+Before pushing: `npm test`, `npm run build`, `npm run test:e2e` (after build), and `npm run test:db` when `supabase/migrations/` changed.
+Never edit a migration that may already be applied; add a new one. Never commit exported session JSON (personal data).

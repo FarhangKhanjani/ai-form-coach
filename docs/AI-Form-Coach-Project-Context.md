@@ -47,6 +47,8 @@ When you work on this project:
 | D7 | Books → draft rules; coach → choose the standard, set thresholds, label a test set | Books give cues in human words; coach translates them into what the camera can measure |
 | D8 | Don't train on scraped online videos until legal advice is obtained | YouTube terms forbid downloading; EU TDM opt-outs; staged "mistake" videos exaggerate errors |
 | D9 | First prototype: single HTML file in the browser | Works on laptop and phone, no app store, fastest to iterate |
+| D10 | App v0.2: Vite + TypeScript web app (installable), hosted on GitHub Pages; Supabase (EU, Frankfurt) for sign-in (email + Google) and data | Still no app store; real accounts and a database for labeled reps; Supabase was already the plan for the backend |
+| D11 | Rule thresholds live in `docs/exercises/<exercise>.md` with a source or a [Placeholder] tag for every number, and as versioned `rule_sets` rows | Keeps "what is correct" traceable; old sessions keep the rules they were scored with |
 
 Rejected for the first version: machine exercises (low value, frame occludes joints, gym-only), bench press (user can't see the screen while lying down, bar path needs a second model).
 
@@ -148,6 +150,8 @@ Only the **squat** is implemented so far.
 
 ## 7. The prototype: `squat-coach.html`
 
+> Sections 7.1–7.8 describe the original single-file prototype, now at `prototype/squat-coach.html`. The current app is in **7.9**.
+
 ### 7.1 Overview
 
 A single self-contained HTML file (HTML + CSS + one ES-module script). It opens the camera, runs MediaPipe Pose Landmarker in the browser, calibrates to the user's body, draws a ghost skeleton of a correct squat scaled to the user, checks five squat rules live, counts reps, gives one on-screen + spoken cue per rep, and logs every rep with its keypoints for labeling and JSON export.
@@ -245,20 +249,35 @@ Landmark indices (MediaPipe): 0 nose, 11/12 shoulders, 13/14 elbows, 15/16 wrist
 - Single person only; no handling of a second person entering the frame.
 - Ghost only translates with the user's feet; it doesn't rescale if the user moves closer or farther (recalibrate instead).
 - Spine/lower-back errors are not measurable.
-- No backend, no accounts; the session lives in memory until exported.
+- No backend, no accounts; the session lives in memory until exported. *(Prototype only; the app saves to Supabase.)*
 
 ---
 
+### 7.9 The app (v0.2)
+
+- **Stack:** Vite + TypeScript, no UI framework; `@mediapipe/tasks-vision@0.10.14`; `@supabase/supabase-js@2.117.2`. Hosted at https://farhangkhanjani.github.io/ai-form-coach/ by `.github/workflows/deploy.yml`.
+- **Flow:** sign in (email/password or Google) → home (start squat, past sessions) → workout (camera, ghost, cues) → review (optional labels) → save → session page (labels editable, JSON download, delete). Profile: name, height, opt-in "use my reps to improve the coach", delete all data.
+- **Squat logic** (`src/exercises/squat/`, no DOM, unit-tested): same approach as 7.5 with the session-1 fixes:
+  - calibration is rejected unless the hips sit over the feet (|shift0| ≤ 0.15 hip width) and both feet are level (≤ 8% of leg length apart);
+  - shift and hip tilt are measured against hip width as a change from standing;
+  - knees: knee width ÷ ankle width, plus inward knee movement since standing per leg (≤ 0.15 hip width);
+  - recalibrates automatically when the feet move > 25% of leg length for 15 frames;
+  - reps with < 10 frames, legs off-screen, feet swapped or feet poorly visible are kept but marked `tracking_ok = false` and not scored;
+  - depth has a tolerance band (5% of the standing gap);
+  - down time starts where the hips began to drop.
+- **Data saved per session:** frame size, pose model, thresholds used, calibration history; per rep: timing, metrics, issues, 2D + world keypoints per frame, user labels. Schema: `supabase/migrations/`.
+- **Export format version 2** (JSON download): `{ app: "ai-form-coach", version: 2, ...workout, reps: [{ ...rep, label }] }`. Metric names changed from v1 (`shiftPct` is now % of hip width, not stance width), hence the new version; `analysis/analyze_session.py` reads v1.
+
 ## 8. Backlog (in order)
 
-1. **Test and fix the squat prototype** on a laptop and a phone. Acceptance: calibration succeeds in < 5 s in normal light; reps counted correctly for 10 consecutive squats; no console errors.
+1. **Test and fix the squat prototype** on a laptop and a phone. *(Session 1 done 2026-10-13, see docs/sessions/; app v0.2 fixes its issues. Re-test with the app.)* Acceptance: calibration succeeds in < 5 s in normal light; reps counted correctly for 10 consecutive squats; no console errors.
 2. **Depth validation:** add a side-view mode (or a second-phone recording workflow) and compare front-view depth against side-view depth for the same reps.
 3. **Coach review session:** update the ghost bottom pose and thresholds; move thresholds into a versioned rules config (JSON) per exercise.
-4. **Refactor** into modules (pose service, calibration, per-exercise rule modules, ghost renderer, UI) so lunge and dumbbell press can be added cleanly.
+4. *(Done in app v0.2 for the squat.)* **Refactor** into modules (pose service, calibration, per-exercise rule modules, ghost renderer, UI) so lunge and dumbbell press can be added cleanly.
 5. **Add lunge, then standing dumbbell press** using the rule spec in section 6.
 6. **User test with 5–10 people at home:** do they look at the overlay and fix their form? Log every complaint about phone placement (evidence for or against hardware).
 7. **Data pipeline (Python):** load exported JSON sessions, compute per-rep features, train a small per-error classifier on keypoint sequences, compare against the rules on a coach-labeled held-out set.
-8. **Backend:** FastAPI + Supabase storing keypoints and session summaries; optional opt-in short clips in Cloudflare R2 for labeling. No video by default.
+8. *(Supabase part done in v0.2: auth + tables + RLS.)* **Backend:** FastAPI + Supabase storing keypoints and session summaries; optional opt-in short clips in Cloudflare R2 for labeling. No video by default.
 9. **Later:** native mobile app; voice-only mode for exercises where the screen isn't visible; bar tracking for bench press; machine "gym mode"; hardware evaluation.
 
 ---

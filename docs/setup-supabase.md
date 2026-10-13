@@ -7,9 +7,9 @@
 
 ## 2. Create the tables
 
-Either:
+Run every file in `supabase/migrations/`, in name order. Either:
 
-- **Dashboard:** SQL Editor → New query → paste the contents of `supabase/migrations/20261013000000_initial_schema.sql` → Run.
+- **Dashboard:** SQL Editor → New query → paste the contents of one migration file → Run. Repeat for the next file.
 - **CLI:** `npx supabase login`, `npx supabase link --project-ref <ref>`, `npx supabase db push`.
 
 Then make yourself admin (SQL Editor, after you've signed up in the app once):
@@ -31,7 +31,7 @@ Authentication → Sign In / Providers → Email: enabled by default. Keep "Conf
 
 Authentication → URL Configuration:
 - Site URL: `https://farhangkhanjani.github.io/ai-form-coach/`
-- Redirect URLs: add the Site URL and `http://localhost:5173/**` (local development).
+- Redirect URLs: add `https://farhangkhanjani.github.io/ai-form-coach/**` and `http://localhost:5173/ai-form-coach/**` (local development).
 
 ## 5. Google sign-in
 

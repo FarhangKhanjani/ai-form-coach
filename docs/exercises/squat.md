@@ -1,6 +1,6 @@
 # Bodyweight / goblet squat — form standard
 
-Version: v0 (draft) · Coach review: not yet · Last change: 2026-10-13
+Version: v0.1 (draft) · Coach review: not yet · Last change: 2026-10-13
 
 Tags: **[S1]–[S7]** = sources at the bottom · **[Placeholder]** = our own starting value, no published source · **[Data]** = from our recordings · **[Coach]** = coach-set.
 
@@ -26,7 +26,7 @@ Tags: **[S1]–[S7]** = sources at the bottom · **[Placeholder]** = our own sta
 | Check | What "correct" means | Measured as | Front | Side | Correct range | Source |
 |---|---|---|---|---|---|---|
 | Depth | Top of thigh at least parallel to the floor | Side: thigh angle vs horizontal. Front: hip-to-knee vertical gap (proxy) | Proxy | ✔ | Side: thigh ≥ 0° below horizontal (≈ 100° knee flexion). Front proxy: ≤ 15% of standing gap left, ± 5% tolerance | Parallel: [S1], [S3], [S4]; ~100° knee flexion at parallel: [S6]; front numbers: [Placeholder] |
-| Knees track over toes | Knee stays in line with the 2nd toe; outer knee never crosses inside the inner ankle | Per-leg frontal knee angle; knee width ÷ ankle width | ✔ | — | Knee width ≥ 0.9× ankle width; inward frontal knee angle ≤ 10° | Criterion: [S1], [S3]. Numbers: [Placeholder]. Note: 2D angle measurement error ≈ 3°, smallest real change ≈ 8–9° [S7] |
+| Knees track over toes | Knee stays in line with the 2nd toe; outer knee never crosses inside the inner ankle | Knee width ÷ ankle width; per leg: how far the knee moved inward since standing (÷ hip width) | ✔ | — | Knee width ≥ 0.9× ankle width; inward knee movement ≤ 0.15 hip width | Criterion: [S1], [S3]. Numbers: [Placeholder]. Note: 2D angle measurement error ≈ 3°, smallest real change ≈ 8–9° [S7] |
 | Heels down | Heels on the floor the whole rep | Heel point rise vs standing height | Weak | ✔ | ≤ 4% of leg length (allows for tracking noise) | Criterion: [S1], [S3], [S4]. Number: [Placeholder] |
 | Torso angle | Torso roughly parallel to the shins; lower back neutral | Side: trunk angle minus shin angle | — | ✔ | Difference within ± 15° | Criterion: [S1], [S3]. Number: [Placeholder]. Back rounding itself is not measurable (no spine points) |
 | Hips level | Line between the hips stays parallel to the floor | Left vs right hip height ÷ hip width | ✔ | — | ≤ 0.10 | Criterion: [S1]. Number: [Placeholder] |
@@ -67,6 +67,7 @@ Ranking is a draft for the coach to confirm.
 ## Changelog
 
 - v0 (2026-10-13): first draft from sources below and session 1 data.
+- v0.1 (2026-10-13): knee check measures inward knee movement from the standing position instead of a 2D frontal knee angle (in session 1 one knee already sat inside the ankle while standing, and 2D knee angles were unreliable from the front). Hip tilt measured as a change from standing. Matches `rule_sets` squat/front v2 and app v0.2.
 
 ## Sources
 

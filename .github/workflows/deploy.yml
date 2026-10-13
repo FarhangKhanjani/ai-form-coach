@@ -1,0 +1,53 @@
+# Tests, builds and publishes the app to GitHub Pages on every push to main.
+# Needs: repo Settings → Pages → Source = "GitHub Actions".
+# Actions are pinned to major versions (GitHub's own actions); npm packages are pinned exactly in package-lock.json.
+name: Test and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      - run: npm test
+      - run: npm run build
+      - name: Database schema and access rules
+        run: |
+          cp -r supabase /tmp/sb && sudo chown -R postgres /tmp/sb
+          cd /tmp && sudo -u postgres sh /tmp/sb/tests/run.sh
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: dist
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

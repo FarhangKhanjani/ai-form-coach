@@ -1,46 +1,47 @@
 # AI Form Coach
 
-A camera-based workout coach: it tracks your body in real time, shows a translucent "ghost" of the correct movement scaled to your body, and gives short corrective cues. Video never leaves the device.
+A camera-based workout coach: it tracks your body in real time, shows a translucent "ghost" of the correct movement scaled to your body, and gives short corrective cues. Video never leaves the device; only keypoints and rep results are saved.
 
-Current stage: a single-file browser prototype for the **squat** (`squat-coach.html`). Full context, decisions and backlog: [`docs/AI-Form-Coach-Project-Context.md`](docs/AI-Form-Coach-Project-Context.md).
+**App:** https://farhangkhanjani.github.io/ai-form-coach/ — open it on your phone and use "Add to Home screen" to install it like an app.
 
+Current stage: squat (front camera), with sign-up/sign-in (email or Google) and saving sessions, reps, keypoints and your own rep labels to Supabase.
+
+## Docs
+
+- Project context, decisions, backlog: [`docs/AI-Form-Coach-Project-Context.md`](docs/AI-Form-Coach-Project-Context.md)
 - What correct form is, per exercise, with sources: [`docs/exercises/`](docs/exercises/)
 - Test session write-ups: [`docs/sessions/`](docs/sessions/)
-- Database (Supabase) schema: [`supabase/migrations/`](supabase/migrations/); setup incl. Google sign-in: [`docs/setup-supabase.md`](docs/setup-supabase.md)
+- Supabase setup incl. Google sign-in: [`docs/setup-supabase.md`](docs/setup-supabase.md)
 
-## Try it
+## Code map
 
-The camera needs a secure page, so don't double-click the file.
+| Path | What |
+|---|---|
+| `src/exercises/squat/` | Squat coach without any UI: calibration, frame metrics, rep detection and scoring, ghost drawing, thresholds (`config.ts`) |
+| `src/pose/` | MediaPipe Pose loader and landmark types |
+| `src/data/api.ts` | Supabase reads/writes (sessions, reps, keypoints, labels, profile) |
+| `src/ui/` | Screens: sign-in, home/history, workout, review, session, profile |
+| `supabase/migrations/` | Database schema, row-level security, seeded exercises and rule sets |
+| `analysis/` | Python scripts for exported sessions |
+| `prototype/` | The original single-file prototype, kept for reference |
 
-- **Laptop:** in this folder run `python -m http.server 8000`, then open `http://localhost:8000/squat-coach.html` in Chrome.
-- **Phone:** enable GitHub Pages for this repo (or any https host) and open the page there.
+## Develop
 
-Setup: camera 2–3 m away at about hip height, facing you, whole body including feet in frame, fitted clothes, good light. Stand still for about a second to calibrate, then squat.
+```
+npm install
+npm run dev          # http://localhost:5173/ai-form-coach/ (camera works on localhost)
+```
 
-## How a rep is judged
+Use the phone on the same Wi-Fi: `npm run dev` prints a network URL, but phones only allow the camera on https, so testing on a phone is easiest through the deployed site.
 
-Everything is measured relative to **your own standing pose** captured during calibration. After each rep, five rules are checked; the thresholds are placeholders in the Rules panel until a coach sets them.
-
-| Rule | Measured as | Default |
-|---|---|---|
-| Depth | Hip-to-knee vertical gap left at the bottom, as % of your standing gap | ≤ 15% left |
-| Knees caving | Knee width ÷ ankle width at the bottom | ≥ 0.85× |
-| Heels lifting | Heel rise above standing height, % of leg length | ≤ 4% |
-| Side shift | Hip midpoint drift from ankle midpoint, % of stance width | ≤ 12% |
-| Tempo | Time from top to bottom | ≥ 1.5 s |
-
-The "Live" line under the Session buttons shows these numbers as you move.
+Pushing to `main` runs the tests and deploys to GitHub Pages (`.github/workflows/deploy.yml`).
 
 ## Tests
 
-Database: `sh supabase/tests/run.sh` applies the migrations to a throwaway local Postgres 16 and checks the access rules (each user sees only their own data, coaches only consented data, no self-promotion to coach).
-
-App:
-
 ```
-npm install playwright          # or use a global install
-node tests/run-tests.mjs logic  # scripted squats through a fake pose model: calibration, reps, every rule, export
-node tests/run-tests.mjs model  # real MediaPipe model on Chromium's fake camera: loads and runs without errors
+npm test                         # squat logic on scripted squats (calibration, every rule, recalibration, glitches)
+npm run build && npm run test:e2e  # built app in Chromium: sign in → workout → label → save (fake model and fake Supabase)
+npm run test:db                  # migrations + access rules on a throwaway local Postgres 16
 ```
 
-The `model` test needs the MediaPipe files locally in `tests/vendor/` (git-ignored): `npm pack @mediapipe/tasks-vision@0.10.14` unpacked to `tests/vendor/package/`, and `pose_landmarker_lite.task` from Google's model storage in `tests/vendor/`. Set `CHROMIUM_PATH` if Playwright's own browser isn't installed.
+`test:e2e` needs Playwright's Chromium (or set `CHROMIUM_PATH`). `test:db` must run as a user that can start Postgres (see `.github/workflows/deploy.yml`).
