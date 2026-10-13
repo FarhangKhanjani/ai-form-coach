@@ -1,0 +1,3563 @@
+{
+  "dataset_meta": {
+    "name": "Compound-exercise technique reference dataset (10 exercises)",
+    "version": "1.0",
+    "created": "2026-10-13",
+    "language": "en",
+    "intended_use": "Reference knowledge base for an AI system that compares a person's detected body pose/movement against documented technique cues.",
+    "how_built": "Web sources (3 or more per exercise) were read, their technique cues were extracted and paraphrased, and each cue was compared across sources. Every checkpoint lists which sources support it and whether sources agree.",
+    "agreement_values": {
+      "consensus": "every source that addresses the point agrees (does not mean every source mentions it)",
+      "single_source": "only one source I read addresses the point; treat as lower confidence",
+      "conflict": "sources disagree; the per_source field shows each position and nothing is averaged"
+    },
+    "read_depth_values": {
+      "full_page": "entire page was read",
+      "excerpt": "only the portions returned by search were read (may be partial)",
+      "excerpt (supplementary)": "extra source used to add or cross-check detail"
+    },
+    "important_limitations": [
+      "These are coaching/instruction texts, not biomechanics measurements. Numeric thresholds exist only where a source stated one; everything else is qualitative. null numeric = no number in the sources.",
+      "Fields named detection_hint_inferred_by_assistant are my suggestions for how a cue might map to pose keypoints. They are NOT from the sources and are not validated.",
+      "Most sources did not state tolerances (how many degrees of deviation are acceptable). Do not treat expected values as exact pass/fail cut-offs without expert review.",
+      "Only the StrongLifts squat and bench press pages were read in full; other exercises are based on excerpts, so 'not_specified_by_sources' lists gaps that may be filled by the full pages.",
+      "Several sources are brand/blog content, not peer-reviewed. Some individual claims (e.g., exact angles, 'never do X') are the source author's opinion; conflicts are preserved rather than resolved.",
+      "Absolute loads (kg) are mostly not given because they depend on the individual. Where a source gave sets/reps they are listed.",
+      "Text is paraphrased from the sources, not quoted. Verify with a qualified coach or physiotherapist before using this as ground truth for health or safety decisions."
+    ],
+    "schema": {
+      "exercises[].checkpoints[]": [
+        "id",
+        "phase",
+        "body_part",
+        "parameter",
+        "expected",
+        "agreement",
+        "source_ids",
+        "numeric{value,unit,note}|null",
+        "per_source{}",
+        "detection_hint_inferred_by_assistant"
+      ],
+      "exercises[].common_errors[]": [
+        "error",
+        "correct_instead",
+        "source_ids",
+        "reason_given_by_source"
+      ],
+      "exercises[].sources[]": [
+        "id",
+        "name",
+        "url",
+        "read_depth"
+      ]
+    }
+  },
+  "global_principles": [
+    {
+      "principle": "Neutral spine is required in squat, deadlift, row, plank and lunge (no rounding, no excess arching).",
+      "seen_in": [
+        "back_squat",
+        "conventional_deadlift",
+        "barbell_bent_over_row",
+        "forearm_plank",
+        "forward_lunge"
+      ]
+    },
+    {
+      "principle": "Brace the core/glutes before loading (breath + tension): squat, bench, deadlift, overhead press, curl, plank, dips.",
+      "seen_in": [
+        "back_squat",
+        "bench_press",
+        "conventional_deadlift",
+        "overhead_press",
+        "barbell_curl",
+        "forearm_plank",
+        "parallel_bar_dip"
+      ]
+    },
+    {
+      "principle": "Use a full, controlled range of motion; momentum and partial reps are flagged as errors in most sources.",
+      "seen_in": [
+        "back_squat",
+        "bench_press",
+        "pull_up",
+        "parallel_bar_dip",
+        "barbell_curl",
+        "barbell_bent_over_row"
+      ]
+    },
+    {
+      "principle": "Technique is individual: several sources say limb length, shoulder width and torso proportions change the exact positions.",
+      "seen_in": [
+        "back_squat",
+        "bench_press",
+        "parallel_bar_dip",
+        "pull_up"
+      ]
+    },
+    {
+      "principle": "Reduce load when form degrades (stated by several sources).",
+      "seen_in": [
+        "barbell_bent_over_row",
+        "overhead_press",
+        "barbell_curl",
+        "forearm_plank",
+        "pull_up"
+      ]
+    }
+  ],
+  "exercises": [
+    {
+      "id": "back_squat",
+      "name": "Barbell Back Squat",
+      "body_region": "legs_glutes",
+      "equipment": [
+        "Olympic barbell (20 kg / 45 lb, 2.2 m / 7 ft per StrongLifts)",
+        "power rack with adjustable horizontal safety pins"
+      ],
+      "muscles_named_by_sources": [
+        "quadriceps",
+        "hamstrings",
+        "adductors",
+        "glutes",
+        "calves (gastrocnemius, soleus)",
+        "lower back",
+        "abs (rectus abdominis, obliques)",
+        "upper back/shoulders/arms (isometric, hold the bar)"
+      ],
+      "sources": [
+        {
+          "id": "SL",
+          "name": "StrongLifts - How to Squat",
+          "url": "https://stronglifts.com/squat/",
+          "read_depth": "full_page"
+        },
+        {
+          "id": "MC",
+          "name": "MasterClass - Barbell Squat Guide",
+          "url": "https://www.masterclass.com/articles/barbell-squat-guide",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "BOS",
+          "name": "Bells of Steel - How to Do a Proper Barbell Squat",
+          "url": "https://www.bellsofsteel.us/blog/?p=9350",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "LIFT",
+          "name": "Liftosaur - Barbell Squat",
+          "url": "https://www.liftosaur.com/exercises/barbell-squat",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "DYN",
+          "name": "Dynamo Fitness - Barbell Back Squat",
+          "url": "https://blog.dynamofitness.com.au/exercise-videos/barbell-back-squat",
+          "read_depth": "excerpt (supplementary)"
+        }
+      ],
+      "checkpoints": [
+        {
+          "id": "sq_01",
+          "phase": "setup",
+          "body_part": "feet",
+          "parameter": "stance_width",
+          "expected": "Heels about shoulder-width apart, heels under shoulders. Slightly wider if long thighs / short torso, but still about shoulder width. Narrow stance makes breaking parallel hard; very wide (sumo) risks the groin.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "LIFT"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "ankle-to-ankle distance approx. equals shoulder-to-shoulder distance in frontal view"
+        },
+        {
+          "id": "sq_02",
+          "phase": "setup",
+          "body_part": "feet",
+          "parameter": "toe_angle",
+          "expected": "Toes turned out about 30 degrees, feet aligned with the thighs/knees.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "LIFT"
+          ],
+          "numeric": {
+            "value": 30,
+            "unit": "degrees",
+            "note": "SL; LIFT says only 'slightly pointed out'"
+          },
+          "detection_hint_inferred_by_assistant": "foot axis vs. sagittal plane in frontal/top view"
+        },
+        {
+          "id": "sq_03",
+          "phase": "setup",
+          "body_part": "feet",
+          "parameter": "foot_contact",
+          "expected": "Whole foot flat on the floor (toes, forefoot, heel). Do not raise heels or toes. Do not put plates or wood under the heels.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_04",
+          "phase": "setup",
+          "body_part": "bar",
+          "parameter": "bar_position",
+          "expected": "Either high bar (on traps, base of neck) or low bar (between traps and rear delts, top of scapular spine). Bar centered left-right before unracking. High bar: more upright torso, knees more forward. Low bar: more forward lean, more hip involvement.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "LIFT",
+            "BOS"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_05",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "grip",
+          "expected": "Medium grip, hands outside shoulders, narrower than bench-press grip. Squeeze the bar but let the upper back, not the hands/wrists, carry the load. Full grip or thumbless both acceptable; thumbless can help wrists.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "LIFT"
+          ],
+          "numeric": null,
+          "per_source": {
+            "SL": "hands outside shoulders, medium",
+            "LIFT": "slightly wider than shoulder width"
+          }
+        },
+        {
+          "id": "sq_06",
+          "phase": "setup",
+          "body_part": "elbows",
+          "parameter": "elbow_position",
+          "expected": "Elbows down and back, slightly behind the torso at the top; forearms inclined (not vertical, not horizontal). At the bottom elbows stay in line with the torso.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "BOS",
+            "LIFT"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_07",
+          "phase": "setup",
+          "body_part": "upper_back",
+          "parameter": "upper_back_tension",
+          "expected": "Squeeze shoulder blades together, arch the upper back, raise the chest BEFORE unracking, so lats/upper back form a shelf for the bar.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "MC",
+            "BOS"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_08",
+          "phase": "setup",
+          "body_part": "head_neck",
+          "parameter": "head_position",
+          "expected": "Head in line with torso. Look at a point on the floor/bottom of the wall ahead. Do not look at the ceiling, feet or sideways.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "ear-shoulder-hip approximately collinear in sagittal view"
+        },
+        {
+          "id": "sq_09",
+          "phase": "setup",
+          "body_part": "rack",
+          "parameter": "bar_height_in_rack",
+          "expected": "About mid-chest level so you only straighten the legs to unrack and stay flat-footed (too high forces you onto toes). MasterClass: adjust to your own height.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "MC"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_10",
+          "phase": "setup",
+          "body_part": "rack",
+          "parameter": "safety_pins",
+          "expected": "Horizontal pins set just below the bottom position of the squat (not so high you hit them on good reps, not so low you must lean to reach them).",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_11",
+          "phase": "unrack",
+          "body_part": "feet",
+          "parameter": "unrack_position",
+          "expected": "Put the feet under the bar and stand up straight (not lunge-style, not feet behind the bar).",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_12",
+          "phase": "unrack",
+          "body_part": "legs",
+          "parameter": "walkout_steps",
+          "expected": "Short walkout: one step back with each leg (SL) / one or two steps back (BOS). Then lock hips and knees.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "BOS"
+          ],
+          "numeric": {
+            "value": "1-2",
+            "unit": "steps",
+            "note": ""
+          }
+        },
+        {
+          "id": "sq_13",
+          "phase": "descent",
+          "body_part": "hips_knees",
+          "parameter": "joint_sequencing",
+          "expected": "Bend hips and knees at the same time: hips back (like sitting on a toilet/chair) while knees push out. Do not only bend the knees; do not only hinge the hips.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "BOS",
+            "LIFT"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_14",
+          "phase": "descent",
+          "body_part": "knees",
+          "parameter": "knee_tracking",
+          "expected": "Knees stay in line with the feet and push out; do not cave inward. Knees move forward during the first half of the descent then stay while hips keep going down. At the bottom knees end above/almost directly above the toes.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "BOS"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "knee x-position should not move medial to the ankle-hip line (frontal view)"
+        },
+        {
+          "id": "sq_15",
+          "phase": "descent",
+          "body_part": "shins",
+          "parameter": "shin_angle",
+          "expected": "Shins incline at the bottom; never vertical. Do not try to keep shins vertical.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_16",
+          "phase": "descent",
+          "body_part": "lower_back",
+          "parameter": "spine_shape",
+          "expected": "Natural arch like standing: no rounding, no over-arching, ribcage down.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "pelvic tuck ('butt wink') visible as lumbar flexion near bottom"
+        },
+        {
+          "id": "sq_17",
+          "phase": "descent",
+          "body_part": "bar",
+          "parameter": "bar_path",
+          "expected": "Vertical line over the mid-foot the whole rep; no horizontal drift. Mid-foot is the balance point.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "bar/shoulder keypoint x stays above mid-foot x"
+        },
+        {
+          "id": "sq_18",
+          "phase": "descent",
+          "body_part": "tempo",
+          "parameter": "descent_speed",
+          "expected": "Controlled but not slow: as fast as form allows.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_19",
+          "phase": "bottom",
+          "body_part": "hips",
+          "parameter": "depth",
+          "expected": "SL: hip crease below the top of the knees ('break parallel'); thighs merely parallel is NOT low enough. LIFT: at least parallel, deeper if flexibility allows. DYN: parallel or just below.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "LIFT",
+            "DYN"
+          ],
+          "numeric": null,
+          "per_source": {
+            "SL": "hip crease strictly below top of knees",
+            "LIFT": "thighs at least parallel",
+            "DYN": "parallel or just below parallel"
+          },
+          "detection_hint_inferred_by_assistant": "hip keypoint y vs knee keypoint y at bottom"
+        },
+        {
+          "id": "sq_20",
+          "phase": "bottom",
+          "body_part": "hips",
+          "parameter": "ass_to_grass",
+          "expected": "ATG not recommended for most: lower back usually rounds, less weight, knee stress if you bounce off the knees. Break parallel then stop. If going deep use high bar.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_21",
+          "phase": "bottom",
+          "body_part": "tempo",
+          "parameter": "bottom_pause",
+          "expected": "SL: do not pause; rebound immediately to use the stretch reflex. DYN: pause briefly at the bottom.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "DYN"
+          ],
+          "numeric": null,
+          "per_source": {
+            "SL": "no pause",
+            "DYN": "pause briefly"
+          }
+        },
+        {
+          "id": "sq_22",
+          "phase": "ascent",
+          "body_part": "hips_chest",
+          "parameter": "rise_pattern",
+          "expected": "Hips move straight up; hips and chest rise together; back angle stays constant until about halfway up; knees stay out; chest up. Hips rising faster than chest turns it into a good-morning.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "torso angle change from bottom to mid-ascent should be small"
+        },
+        {
+          "id": "sq_23",
+          "phase": "ascent",
+          "body_part": "hips_knees",
+          "parameter": "lockout",
+          "expected": "Stand tall with hips and knees locked, straight line shoulders-to-ankles, lower back neutral.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_24",
+          "phase": "whole_rep",
+          "body_part": "torso",
+          "parameter": "back_angle",
+          "expected": "Diagonal, neither vertical nor horizontal. Exact angle depends on build (long thighs/short torso = more lean) and bar position (low bar = more lean). Judge by bar staying over mid-foot, not by a fixed degree.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "sq_25",
+          "phase": "whole_rep",
+          "body_part": "bar",
+          "parameter": "balance",
+          "expected": "Bar over mid-foot at start, through the rep and at lockout.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        }
+      ],
+      "breathing": [
+        {
+          "text": "Big breath at the top, hold it on the way down and at the bottom, exhale at the top (can slowly exhale against closed glottis on a heavy ascent).",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "text": "Inhale before unracking, hold the brace during the walkout, slight exhale as the bar settles, then brace again.",
+          "source_ids": [
+            "BOS"
+          ]
+        },
+        {
+          "text": "Take a deep breath before unracking.",
+          "source_ids": [
+            "MC"
+          ]
+        },
+        {
+          "text": "Inhale while lowering, exhale while ascending.",
+          "source_ids": [
+            "LIFT"
+          ]
+        }
+      ],
+      "breathing_agreement": "conflict (SL/BOS: brace and hold during descent; LIFT: exhale on ascent, inhale on descent)",
+      "common_errors": [
+        {
+          "error": "Partial / half squats",
+          "correct_instead": "Break parallel (hip crease below top of knees)",
+          "source_ids": [
+            "SL"
+          ],
+          "reason_given_by_source": "less muscle growth, 'fake strength'"
+        },
+        {
+          "error": "Knees cave inward",
+          "correct_instead": "Push knees out in line with feet on way down and up",
+          "source_ids": [
+            "SL"
+          ],
+          "reason_given_by_source": "twists the knee joint"
+        },
+        {
+          "error": "Heels come off floor",
+          "correct_instead": "Stance shoulder-width, toes 30 deg out, knees out; no plates under heels; hard-soled shoes",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Leaning forward / hips rise faster than chest (good-morning)",
+          "correct_instead": "Raise hips and chest together, keep back angle constant",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Lower back rounding",
+          "correct_instead": "Knees/toes out, do not go deeper than parallel-ish, natural arch",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Narrow stance so belly blocks depth",
+          "correct_instead": "Heels shoulder-width, toes out 30 deg",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Very wide sumo stance",
+          "correct_instead": "Heels about shoulder-width",
+          "source_ids": [
+            "SL"
+          ],
+          "reason_given_by_source": "groin injury risk without squat suit"
+        },
+        {
+          "error": "Looking up / using mirrors",
+          "correct_instead": "Neutral neck, film yourself instead",
+          "source_ids": [
+            "SL"
+          ],
+          "reason_given_by_source": "neck compression"
+        },
+        {
+          "error": "Supporting the bar with the hands/wrists",
+          "correct_instead": "Carry it on the upper-back shelf",
+          "source_ids": [
+            "SL"
+          ],
+          "reason_given_by_source": "wrist/elbow pain"
+        },
+        {
+          "error": "Bar off-centre",
+          "correct_instead": "Center before unracking",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Unracking with feet behind the bar or lunge-style",
+          "correct_instead": "Feet under bar, stand straight up",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Rounding the back while squatting",
+          "correct_instead": "Keep spine neutral, chest up",
+          "source_ids": [
+            "BOS"
+          ]
+        },
+        {
+          "error": "Squatting in the Smith machine / box squat as crutch / leg press as replacement",
+          "correct_instead": "Free-weight squat in a power rack",
+          "source_ids": [
+            "SL"
+          ]
+        }
+      ],
+      "load_and_reps": [
+        {
+          "text": "Start with a weight you can control for 2-4 sets of 3-8 reps.",
+          "source_ids": [
+            "MC"
+          ]
+        },
+        {
+          "text": "StrongLifts 5x5: 5 sets of 5 reps.",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "text": "Low bar lets most people lift about 10-20% more than high bar.",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "text": "Back squat about 30% heavier than front squat (SL). Build back squat to about 140 kg / 300 lb before adding front squat.",
+          "source_ids": [
+            "SL"
+          ]
+        }
+      ],
+      "safety": [
+        "Use a power rack with safety pins; fail by squatting the bar down onto the pins (SL).",
+        "SL does not recommend spotters or the Smith machine.",
+        "Rack by finishing the rep, walking forward until bar touches uprights, then bending the knees (SL)."
+      ],
+      "variations_named_by_sources": [
+        "high bar / Olympic squat",
+        "low bar",
+        "ATG",
+        "front squat",
+        "box squat",
+        "Smith squat",
+        "leg press",
+        "dumbbell squat",
+        "goblet squat"
+      ],
+      "not_specified_by_sources": [
+        "Exact torso angle in degrees",
+        "Exact knee angle at bottom",
+        "Exact bar-over-midfoot tolerance",
+        "Exact descent/ascent duration in seconds"
+      ]
+    },
+    {
+      "id": "bench_press",
+      "name": "Barbell Bench Press (flat)",
+      "body_region": "chest_shoulders_triceps",
+      "equipment": [
+        "flat bench ~45 cm (18 in) high, ~30 cm (12 in) wide, rated at least 300 kg (600 lb) incl. body weight (SL)",
+        "Olympic bar with revolving sleeves (SL)",
+        "power rack with safety pins (SL)"
+      ],
+      "muscles_named_by_sources": [
+        "chest",
+        "shoulders",
+        "triceps"
+      ],
+      "sources": [
+        {
+          "id": "SL",
+          "name": "StrongLifts - How to Bench Press",
+          "url": "https://stronglifts.com/bench-press/",
+          "read_depth": "full_page"
+        },
+        {
+          "id": "TB",
+          "name": "The Barbell - How to Bench Press",
+          "url": "https://thebarbell.com/how-to-bench-press/",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "BWS",
+          "name": "Built With Science - Bench press form by anatomy",
+          "url": "https://builtwithscience.com/bench-press-form",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "FV",
+          "name": "FitnessVolt - Bench Press for Powerlifting",
+          "url": "https://fitnessvolt.com/powerlifting/guides/bench-press-technique-guide/",
+          "read_depth": "excerpt (supplementary)"
+        }
+      ],
+      "checkpoints": [
+        {
+          "id": "bp_01",
+          "phase": "setup",
+          "body_part": "head",
+          "parameter": "eyes_under_bar",
+          "expected": "Lie with eyes under the bar (bar over eyes when looking up). Head neutral; do not push the head into the bench (hair touches bench only).",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_02",
+          "phase": "setup",
+          "body_part": "shoulder_blades",
+          "parameter": "scapular_position",
+          "expected": "Shoulder blades squeezed together and down ('pen between them'), chest lifted toward the ceiling, upper back tight, lats squeezed. Shoulders stay back on the bench; do not shrug forward.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "TB",
+            "FV"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_03",
+          "phase": "setup",
+          "body_part": "lower_back",
+          "parameter": "arch",
+          "expected": "SL: natural arch only (a flat hand can slide between lower back and bench), no horseshoe over-arch, butt stays on bench. TB: natural arch, glutes touch bench but carry no weight. BWS: tune arch to your anatomy. FV (powerlifting): larger arch built by driving hips up, pulling blades back/down, lowering hips; flat-foot with feet tucked back increases arch but needs flexibility.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "TB",
+            "BWS",
+            "FV"
+          ],
+          "numeric": null,
+          "per_source": {
+            "SL": "natural arch, no overarch",
+            "TB": "natural arch",
+            "BWS": "individual",
+            "FV": "competition-style larger arch"
+          },
+          "detection_hint_inferred_by_assistant": "gap between lumbar and bench in side view"
+        },
+        {
+          "id": "bp_04",
+          "phase": "setup",
+          "body_part": "feet",
+          "parameter": "foot_position",
+          "expected": "Whole foot flat on floor incl. heels; shoulder-width stance (heel-to-heel), feet under knees or slightly behind; knee and ankle about 90 deg; toes can turn out about 30 deg. TB: heels slightly behind knees; feet in front of knees weakens base. No feet on bench or in the air.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "TB"
+          ],
+          "numeric": {
+            "value": 90,
+            "unit": "degrees",
+            "note": "knee and ankle angle, SL"
+          }
+        },
+        {
+          "id": "bp_05",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "grip_position",
+          "expected": "Bar low in the base of the palm over the forearm bones, close to the wrist ('bulldog grip': rotate hands in then close). Wrist, elbow aligned: straight line bar-wrist-elbow. Wrists must not bend back.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "TB"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_06",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "thumbs",
+          "expected": "Thumbs wrapped around the bar (full grip). No thumbless grip.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "TB"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_07",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "grip_width",
+          "expected": "SL: pinky just inside the ring marks, whatever gives vertical forearms at the bottom. TB: depends on shoulder width. BWS: choose elbow angle first, then set width to allow it. FV: raw lifters often use the 81 cm maximum legal width but too wide causes shoulder impingement.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "TB",
+            "BWS",
+            "FV"
+          ],
+          "numeric": {
+            "value": 81,
+            "unit": "cm",
+            "note": "max legal competition grip, index-finger to index-finger (FV)"
+          }
+        },
+        {
+          "id": "bp_08",
+          "phase": "setup",
+          "body_part": "equipment",
+          "parameter": "bench_height_width",
+          "expected": "Bench 45 cm (18 in) high so hips sit slightly above knees; 30 cm (12 in) wide; load rating >= 300 kg.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": {
+            "value": 45,
+            "unit": "cm",
+            "note": "height"
+          }
+        },
+        {
+          "id": "bp_09",
+          "phase": "setup",
+          "body_part": "equipment",
+          "parameter": "uprights_height",
+          "expected": "Set so arms are still bent when you grab the bar and you straighten them to unrack. Too high: shoulders shrug forward. Too low: you waste strength.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_10",
+          "phase": "setup",
+          "body_part": "equipment",
+          "parameter": "safety_pins",
+          "expected": "Slightly below chest level so you never touch them on good reps; to fail, lower to chest then flatten the torso onto the pins.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_11",
+          "phase": "unrack",
+          "body_part": "arms",
+          "parameter": "unrack",
+          "expected": "Unrack by straightening the arms with elbows locked, move the bar horizontally until balanced over the shoulder joint BEFORE lowering. Do not lower straight from the uprights.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_12",
+          "phase": "descent",
+          "body_part": "elbows",
+          "parameter": "elbow_angle",
+          "expected": "SL: elbows tucked about 75 deg from torso (upper arm angle), never 90 deg flared (shoulder impingement), never touching torso. BWS: choose the angle that suits your anatomy; lower angle biases upper chest, more flared biases mid/lower chest. FV: should feel natural, too low (toward stomach) reduces power.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "BWS",
+            "FV"
+          ],
+          "numeric": {
+            "value": 75,
+            "unit": "degrees",
+            "note": "SL; angle between upper arm and torso, 'depends on your build'"
+          },
+          "per_source": {
+            "SL": "about 75 deg",
+            "BWS": "individual; affects chest region emphasis",
+            "FV": "natural; avoid too low"
+          },
+          "detection_hint_inferred_by_assistant": "shoulder-elbow vector vs. torso line at bottom (frontal view)"
+        },
+        {
+          "id": "bp_13",
+          "phase": "descent",
+          "body_part": "forearms",
+          "parameter": "forearm_angle",
+          "expected": "Forearms vertical to the floor at the bottom from side and front views. Elbows outside wrists = triceps extension-like; inside wrists = more shoulder stress.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "elbow x approx. wrist x in frontal view at the bottom"
+        },
+        {
+          "id": "bp_14",
+          "phase": "descent",
+          "body_part": "bar",
+          "parameter": "chest_contact_point",
+          "expected": "SL: middle of breastbone (mid-chest); touch higher with chest raised. TB: bar travels from lower chest. Bar must touch chest (no half reps).",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "TB"
+          ],
+          "numeric": null,
+          "per_source": {
+            "SL": "mid-chest / sternum",
+            "TB": "lower chest"
+          }
+        },
+        {
+          "id": "bp_15",
+          "phase": "descent",
+          "body_part": "bar",
+          "parameter": "bar_path",
+          "expected": "Diagonal line from mid/lower chest to over the shoulders; not vertical over chest or over shoulders/neck. Shoulders are the balance point for lockout.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "TB",
+            "FV"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_16",
+          "phase": "descent",
+          "body_part": "tempo",
+          "parameter": "speed_and_touch",
+          "expected": "Controlled but not slow; touch-and-go (SL, no pause) with no bouncing off the chest (brush the shirt). Competition lifts use a pause.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL",
+            "FV"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_17",
+          "phase": "ascent",
+          "body_part": "legs_back",
+          "parameter": "drive",
+          "expected": "Drive feet into the floor through the whole press (FV, TB) and drive upper back and glutes into the bench: 'push yourself away from the bar' (SL).",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "TB",
+            "FV"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_18",
+          "phase": "ascent",
+          "body_part": "elbows",
+          "parameter": "elbow_flare_up",
+          "expected": "Flare elbows back out on the way up so they stay under the bar; keep forearms vertical.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_19",
+          "phase": "ascent",
+          "body_part": "hips",
+          "parameter": "butt_contact",
+          "expected": "Butt stays on the bench throughout; lower back may lift slightly, butt may not.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "TB"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_20",
+          "phase": "lockout",
+          "body_part": "elbows",
+          "parameter": "lockout",
+          "expected": "Lock elbows gently (no hyper-extension); bar over shoulder joint.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "bp_21",
+          "phase": "rack",
+          "body_part": "bar",
+          "parameter": "racking",
+          "expected": "Lock out, move bar horizontally back against the rack uprights, then bend arms to lower it into the hooks. Do not look at the uprights.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        }
+      ],
+      "breathing": [
+        {
+          "text": "Big breath at the top, hold on the way down and at the bottom, exhale at lockout. Skilled lifters can do several reps per breath.",
+          "source_ids": [
+            "SL"
+          ]
+        }
+      ],
+      "breathing_agreement": "single_source",
+      "common_errors": [
+        {
+          "error": "Thumbless ('suicide') grip",
+          "correct_instead": "Wrap thumbs around the bar",
+          "source_ids": [
+            "SL",
+            "TB"
+          ],
+          "reason_given_by_source": "bar can slip out"
+        },
+        {
+          "error": "Elbows flared 90 deg",
+          "correct_instead": "Tuck about 75 deg",
+          "source_ids": [
+            "SL"
+          ],
+          "reason_given_by_source": "rotator cuff squeezed against AC joint"
+        },
+        {
+          "error": "Bent wrists",
+          "correct_instead": "Grip low in palm / bulldog grip",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Smith machine bench",
+          "correct_instead": "Free weights in a rack",
+          "source_ids": [
+            "SL"
+          ],
+          "reason_given_by_source": "forces vertical bar path"
+        },
+        {
+          "error": "Benching without rack/spotter",
+          "correct_instead": "Use power rack with pins",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Lowering the bar straight from the uprights to chest",
+          "correct_instead": "Unrack and balance over shoulders first",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Not locking elbows",
+          "correct_instead": "Lock at the top of every rep",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Flat chest / no arch",
+          "correct_instead": "Raise chest, natural arch",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Butt off bench",
+          "correct_instead": "Keep butt down; check bench height",
+          "source_ids": [
+            "SL",
+            "TB"
+          ]
+        },
+        {
+          "error": "Feet in the air or on the bench",
+          "correct_instead": "Feet flat on floor",
+          "source_ids": [
+            "SL",
+            "TB"
+          ]
+        },
+        {
+          "error": "Bouncing the bar off the chest",
+          "correct_instead": "Touch and go, brush chest",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Half reps",
+          "correct_instead": "Touch the chest",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Pushing the head into the bench",
+          "correct_instead": "Keep neck neutral",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Holding breath poorly / no breathing plan",
+          "correct_instead": "Follow brace-and-hold plan",
+          "source_ids": [
+            "SL"
+          ]
+        }
+      ],
+      "load_and_reps": [
+        {
+          "text": "StrongLifts 5x5 workout A: sets of 5 reps; start with the empty bar and add 2.5 kg / 5 lb per workout.",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "text": "Choose weight so shoulder blades and butt stay stable all reps (no source gives an absolute weight).",
+          "source_ids": [
+            "SL",
+            "TB"
+          ]
+        }
+      ],
+      "safety": [
+        "Fail safely in a power rack: lower to chest, flatten torso onto the pins (SL).",
+        "If no rack, ask for a spot but SL still prefers a rack.",
+        "Dumbbell bench is not safer: dumbbells can drop on the face (SL)."
+      ],
+      "variations_named_by_sources": [
+        "close-grip",
+        "incline",
+        "decline",
+        "dumbbell",
+        "machine",
+        "push-ups"
+      ],
+      "not_specified_by_sources": [
+        "Exact chest-contact height tolerance",
+        "Duration of the descent in seconds",
+        "Exact arch height in cm"
+      ]
+    },
+    {
+      "id": "conventional_deadlift",
+      "name": "Conventional Barbell Deadlift",
+      "body_region": "back_posterior_chain",
+      "equipment": [
+        "barbell with plates",
+        "flat shoes without lift or cushioning (MC)"
+      ],
+      "muscles_named_by_sources": [
+        "glutes",
+        "hamstrings",
+        "back (keeps spine neutral)"
+      ],
+      "sources": [
+        {
+          "id": "SL",
+          "name": "StrongLifts - How to Deadlift",
+          "url": "https://stronglifts.com/deadlift/",
+          "read_depth": "excerpt (key cues only)"
+        },
+        {
+          "id": "MC",
+          "name": "MasterClass - Deadlift Form Guide",
+          "url": "https://www.masterclass.com/articles/deadlift-form-guide",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "SU",
+          "name": "Squat University - How to Correctly Deadlift (Ed Coan / Stuart McGill)",
+          "url": "https://squatuniversity.com/2024/10/30/how-to-correctly-deadlift-ft-ed-coan-dr-stuart-mcgill",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "HT",
+          "name": "HomeTeamNS - Tips to Execute the Perfect Deadlift",
+          "url": "https://www.hometeamns.sg/frontline/the-perfect-deadlift/",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "MT",
+          "name": "MuscleTech - Proper Deadlift Form",
+          "url": "https://muscletech.com/blogs/journal/proper-deadlift-form",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "GR",
+          "name": "Goodreads author blog - Learning Deadlifting: 10 Mistakes Almost Everyone Makes",
+          "url": "https://www.goodreads.com/author_blog_posts/21165790-learning-deadlifting-10-mistakes-almost-everyone-makes?tab=book",
+          "read_depth": "excerpt (supplementary)"
+        }
+      ],
+      "checkpoints": [
+        {
+          "id": "dl_01",
+          "phase": "setup",
+          "body_part": "feet",
+          "parameter": "stance_width",
+          "expected": "Hip-width stance.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "dl_02",
+          "phase": "setup",
+          "body_part": "bar",
+          "parameter": "bar_position",
+          "expected": "Bar directly over the middle of the foot (mid-foot); shins touch the bar once you bend the knees but the bar must not move off mid-foot. If the bar starts too far forward it must travel back toward the body.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "MC",
+            "SU",
+            "HT",
+            "MT"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "bar keypoint above mid-foot in side view"
+        },
+        {
+          "id": "dl_03",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "grip_and_arms",
+          "expected": "Narrow (about hip-width) grip, arms straight and vertical, low-hand grip. With a mixed grip, twisting suggests shoulders are too far forward (SU).",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "HT",
+            "SU"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "dl_04",
+          "phase": "setup",
+          "body_part": "shoulders",
+          "parameter": "shoulder_position",
+          "expected": "SL: shoulders in front of the bar from the side, relaxed, shoulder blades over the bar. MT: shoulder blades directly over the bar, pushed back and down. HT: shoulders relaxed in front of the bar so blades sit above mid-foot/bar. SU: align the bar with the posterior deltoid (like low-bar squat bar spot); 'shoulders over the bar' cue is too general. MC: shoulders higher than hips, and shoulders finish over hips at lockout.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "MT",
+            "HT",
+            "SU",
+            "MC"
+          ],
+          "numeric": null,
+          "per_source": {
+            "SL": "shoulder blades over bar",
+            "MT": "shoulder blades over bar",
+            "HT": "shoulder blades over bar",
+            "SU": "bar aligned with posterior deltoid",
+            "MC": "shoulders above hips; over hips at lockout"
+          },
+          "detection_hint_inferred_by_assistant": "shoulder keypoint x vs bar x in side view at start"
+        },
+        {
+          "id": "dl_05",
+          "phase": "setup",
+          "body_part": "hips",
+          "parameter": "hip_height",
+          "expected": "Hips higher than knees and shoulders higher than hips (MC). HT: bend knees until shins touch bar, raise chest, and hips land where they should.",
+          "agreement": "consensus",
+          "source_ids": [
+            "MC",
+            "HT"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "dl_06",
+          "phase": "setup",
+          "body_part": "spine",
+          "parameter": "spine_shape",
+          "expected": "Neutral lower back (normal inward curve) with a straight line from head to lower back; neck neutral, eyes on a point on the floor ahead. If you over-arch, brace the abs. Spine must stay neutral for the whole lift.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "MC",
+            "SU",
+            "HT",
+            "MT"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "ear-shoulder-hip-pelvis line without lumbar flexion"
+        },
+        {
+          "id": "dl_07",
+          "phase": "setup",
+          "body_part": "torso",
+          "parameter": "brace",
+          "expected": "Pre-tension shoulders, hips and core with a breath before going down (MC); 'get tight' before the pull, otherwise hips shoot up and the back rounds (SU).",
+          "agreement": "consensus",
+          "source_ids": [
+            "MC",
+            "SU"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "dl_08",
+          "phase": "pull",
+          "body_part": "bar",
+          "parameter": "bar_path",
+          "expected": "Bar stays in contact with shins and thighs, rolling over them, close to the center of gravity.",
+          "agreement": "consensus",
+          "source_ids": [
+            "HT",
+            "SL"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "bar-to-leg distance small throughout"
+        },
+        {
+          "id": "dl_09",
+          "phase": "pull",
+          "body_part": "hips_chest",
+          "parameter": "rise_pattern",
+          "expected": "Raise hips and chest together by pushing feet through the floor; extend the hips (thrust forward) with a neutral spine; SU: 'squat it up' to the knee.",
+          "agreement": "consensus",
+          "source_ids": [
+            "HT",
+            "SU",
+            "MC"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "hip angle should not open much faster than torso angle"
+        },
+        {
+          "id": "dl_10",
+          "phase": "lockout",
+          "body_part": "hips_knees",
+          "parameter": "lockout",
+          "expected": "Hips and knees locked, shoulders over hips, glutes squeezed, no leaning back.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "MC",
+            "MT"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "dl_11",
+          "phase": "descent",
+          "body_part": "hips_knees",
+          "parameter": "lowering",
+          "expected": "Push hips back first with legs nearly straight; bend the knees once the bar passes the knees (hinge/RDL to the knee, then squat it down). Do not drop the bar.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "MC",
+            "SU",
+            "MT"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "dl_12",
+          "phase": "setup",
+          "body_part": "equipment",
+          "parameter": "footwear",
+          "expected": "Flat shoes with no lift or extra cushioning.",
+          "agreement": "single_source",
+          "source_ids": [
+            "MC"
+          ],
+          "numeric": null
+        }
+      ],
+      "breathing": [
+        {
+          "text": "Breathe in and out to pre-tension, then tighten shoulders/hips/core before lowering to the bar.",
+          "source_ids": [
+            "MC"
+          ]
+        }
+      ],
+      "breathing_agreement": "single_source (no detailed breathing protocol in the excerpts read)",
+      "common_errors": [
+        {
+          "error": "Lifting with a rounded / unstable spine",
+          "correct_instead": "Neutral spine for the whole lift",
+          "source_ids": [
+            "MT",
+            "SL"
+          ]
+        },
+        {
+          "error": "Hips shoot up first, back rounds",
+          "correct_instead": "Get tight before the pull",
+          "source_ids": [
+            "SU"
+          ]
+        },
+        {
+          "error": "Bar too far in front of mid-foot",
+          "correct_instead": "Bar over mid-foot",
+          "source_ids": [
+            "SU",
+            "SL"
+          ]
+        },
+        {
+          "error": "Bending at the back instead of hinging at the hips",
+          "correct_instead": "Push butt back, break at hips",
+          "source_ids": [
+            "GR"
+          ]
+        },
+        {
+          "error": "Lifting by extending the back rather than the hips",
+          "correct_instead": "Extend hips; glutes and hamstrings are prime movers",
+          "source_ids": [
+            "GR"
+          ]
+        },
+        {
+          "error": "Bouncing the weight off the floor",
+          "correct_instead": "Dead-stop each rep",
+          "source_ids": [
+            "MT"
+          ]
+        },
+        {
+          "error": "Leaning back at lockout",
+          "correct_instead": "Finish tall",
+          "source_ids": [
+            "MT"
+          ]
+        },
+        {
+          "error": "Letting ego choose the weight",
+          "correct_instead": "Prioritize form",
+          "source_ids": [
+            "MT"
+          ]
+        }
+      ],
+      "load_and_reps": [
+        {
+          "text": "Start light, use proper form, slowly add weight.",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "text": "No absolute weights given in the excerpts.",
+          "source_ids": [
+            "SL",
+            "MC",
+            "SU"
+          ]
+        }
+      ],
+      "safety": [
+        "Deadlift from the floor each rep (dead start) per MT."
+      ],
+      "variations_named_by_sources": [
+        "sumo",
+        "Romanian deadlift",
+        "stiff-leg",
+        "hex-bar",
+        "kettlebell"
+      ],
+      "not_specified_by_sources": [
+        "Exact stance width in cm",
+        "Exact knee/hip angle at start",
+        "Exact grip width",
+        "Breathing timing"
+      ]
+    },
+    {
+      "id": "pull_up",
+      "name": "Pull-Up (overhand grip)",
+      "body_region": "back_lats",
+      "equipment": [
+        "stable pull-up bar high enough that feet do not touch the floor (NFPT)"
+      ],
+      "muscles_named_by_sources": [
+        "latissimus dorsi",
+        "lower trapezius",
+        "posterior deltoids",
+        "biceps",
+        "rhomboids",
+        "core"
+      ],
+      "sources": [
+        {
+          "id": "NFPT",
+          "name": "NFPT - How To Do Pull-Ups",
+          "url": "https://www.nfpt.com/?p=10925",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "NASM",
+          "name": "NASM - Pull-Up exercise library",
+          "url": "https://www.nasm.org/resource-center/exercise-library/pull-up",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "SW",
+          "name": "Sweat - How to Do a Pull-Up",
+          "url": "https://www.sweat.com/blogs/fitness/how-to-do-pull-ups",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "CE",
+          "name": "Centr - How to do a pull-up",
+          "url": "https://centr.com/blogs/thewarmup/how-to-do-a-pull-up",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "BB",
+          "name": "BullBar - How to Measure Pull-Up Form",
+          "url": "https://bullbarfit.com/blogs/q-as/how-to-measure-pull-up-form-and-correctness",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "BP",
+          "name": "BarPath Fitness - How to Master Pull Ups",
+          "url": "https://barpathfitness.com/blog/how-to-master-the-pull-up/",
+          "read_depth": "excerpt (supplementary)"
+        }
+      ],
+      "checkpoints": [
+        {
+          "id": "pu_01",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "grip_type",
+          "expected": "Overhand (pronated) grip, palms facing away. Chin-up (palms toward you) uses more biceps and a narrower grip.",
+          "agreement": "consensus",
+          "source_ids": [
+            "NFPT",
+            "NASM",
+            "SW",
+            "CE"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "pu_02",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "grip_width",
+          "expected": "NFPT and CE: about shoulder-width. NASM and SW: slightly wider than shoulder-width (more back engagement). BB: wider grip emphasizes lats.",
+          "agreement": "conflict",
+          "source_ids": [
+            "NFPT",
+            "NASM",
+            "SW",
+            "CE",
+            "BB"
+          ],
+          "numeric": null,
+          "per_source": {
+            "NFPT": "about shoulder-width",
+            "CE": "shoulder-width (for beginners)",
+            "NASM": "slightly wider than shoulders",
+            "SW": "slightly wider than shoulders"
+          },
+          "detection_hint_inferred_by_assistant": "wrist-to-wrist distance / shoulder width ratio"
+        },
+        {
+          "id": "pu_03",
+          "phase": "start",
+          "body_part": "arms",
+          "parameter": "bottom_position",
+          "expected": "Start from a full hang with arms completely extended and neck neutral; elbows fully extended at the bottom of every rep.",
+          "agreement": "consensus",
+          "source_ids": [
+            "NFPT",
+            "NASM",
+            "SW",
+            "BB"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "elbow angle near 180 deg at the bottom"
+        },
+        {
+          "id": "pu_04",
+          "phase": "start",
+          "body_part": "shoulder_blades",
+          "parameter": "scapular_action",
+          "expected": "Depress the scapulae first and keep shoulders down while pulling (NFPT). BB defines a true dead hang as scapulae retracted and depressed vs a passive hang with shoulders shrugged to the ears. Do not elevate the shoulders while pulling (over-recruits upper traps, rhomboids, levator).",
+          "agreement": "consensus",
+          "source_ids": [
+            "NFPT",
+            "BB"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "shoulder keypoint should not move toward ear at start of pull"
+        },
+        {
+          "id": "pu_05",
+          "phase": "top",
+          "body_part": "head_chin",
+          "parameter": "top_position",
+          "expected": "Chin clears the bar (NASM, SW, BB, CE); NFPT adds the chest should nearly touch the bar. Neck neutral: do not crane the neck to get the chin over.",
+          "agreement": "consensus",
+          "source_ids": [
+            "NFPT",
+            "NASM",
+            "SW",
+            "BB"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "chin/nose keypoint y above bar y"
+        },
+        {
+          "id": "pu_06",
+          "phase": "whole_rep",
+          "body_part": "body",
+          "parameter": "body_line",
+          "expected": "Body straight without arching or swinging; no momentum. Legs may be straight, or knees bent with ankles together, feet off the floor. Do not cross the ankles (poor core control).",
+          "agreement": "single_source",
+          "source_ids": [
+            "NFPT"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "pu_07",
+          "phase": "descent",
+          "body_part": "arms",
+          "parameter": "lowering",
+          "expected": "Lower in a controlled, even manner; about 2-3 seconds (BB).",
+          "agreement": "consensus",
+          "source_ids": [
+            "NFPT",
+            "NASM",
+            "BB"
+          ],
+          "numeric": {
+            "value": "2-3",
+            "unit": "seconds",
+            "note": "BB"
+          }
+        }
+      ],
+      "breathing": [],
+      "breathing_agreement": "not_specified_by_sources",
+      "common_errors": [
+        {
+          "error": "Incomplete range of motion",
+          "correct_instead": "Full hang to chin over bar",
+          "source_ids": [
+            "SW",
+            "NASM"
+          ],
+          "reason_given_by_source": "two full reps beat ten partial reps (SW)"
+        },
+        {
+          "error": "Neck strain / craning to clear the bar",
+          "correct_instead": "Neutral neck",
+          "source_ids": [
+            "SW",
+            "NFPT"
+          ]
+        },
+        {
+          "error": "Momentum / kipping / swinging",
+          "correct_instead": "Strict controlled pull",
+          "source_ids": [
+            "CE",
+            "NFPT"
+          ]
+        },
+        {
+          "error": "Shrugging shoulders toward ears",
+          "correct_instead": "Depress scapulae first",
+          "source_ids": [
+            "NFPT"
+          ]
+        },
+        {
+          "error": "Crossing ankles",
+          "correct_instead": "Ankles together or legs straight",
+          "source_ids": [
+            "NFPT"
+          ]
+        },
+        {
+          "error": "Jerky, uncontrolled descent",
+          "correct_instead": "Lower with control",
+          "source_ids": [
+            "NASM"
+          ]
+        },
+        {
+          "error": "Fatigue-driven form break",
+          "correct_instead": "Stop the set when form degrades",
+          "source_ids": [
+            "NASM"
+          ]
+        }
+      ],
+      "load_and_reps": [
+        {
+          "text": "Quality over quantity; fatigue compromises form (NASM).",
+          "source_ids": [
+            "NASM"
+          ]
+        },
+        {
+          "text": "Scapular shrugs/pull-ups: 3 sets of 8-12 reps as a precursor (Bible of Calisthenics excerpt).",
+          "source_ids": [
+            "BP"
+          ]
+        }
+      ],
+      "progressions": [
+        "passive then active dead hang (BP: be able to passively hang about 60 s first)",
+        "scapular pull-ups",
+        "box/step-assisted",
+        "band-assisted (loop band over bar, foot or knee in it)",
+        "negatives (jump to chin over bar, lower slowly)",
+        "chin-over-bar holds (BP targets 30 s hold, 10 s negatives)",
+        "chin-ups first for beginners (CE, BP)"
+      ],
+      "safety": [],
+      "not_specified_by_sources": [
+        "Exact grip width in cm",
+        "Tempo of the pull",
+        "Breathing"
+      ]
+    },
+    {
+      "id": "barbell_bent_over_row",
+      "name": "Barbell Bent-Over Row",
+      "body_region": "back",
+      "equipment": [
+        "barbell with plates"
+      ],
+      "muscles_named_by_sources": [
+        "latissimus dorsi",
+        "middle and lower trapezius",
+        "rhomboids",
+        "posterior deltoids",
+        "biceps",
+        "core/lower back stabilizers"
+      ],
+      "sources": [
+        {
+          "id": "SL",
+          "name": "StrongLifts - How to Barbell Row",
+          "url": "https://stronglifts.com/barbell-row/",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "WM",
+          "name": "WebMD - How to Do Barbell Row",
+          "url": "https://webmd.com/fitness-exercise/how-to-do-barbell-row",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "FB",
+          "name": "Fitbod - Bent Over Barbell Row",
+          "url": "https://fitbod.me/exercises/bent-over-barbell-row",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "HL",
+          "name": "Healthline - Bent Over Row",
+          "url": "https://www.healthline.com/health/fitness/bent-over-row",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "LS",
+          "name": "Liftosaur - Barbell Bent Over Row",
+          "url": "https://liftosaur.com/exercises/barbell-bent-over-row",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "VG",
+          "name": "Virtuagym - Bent-over Row",
+          "url": "https://exercises.virtuagym.com/exercise/bent-over-row/",
+          "read_depth": "excerpt (supplementary)"
+        }
+      ],
+      "checkpoints": [
+        {
+          "id": "row_01",
+          "phase": "start",
+          "body_part": "bar",
+          "parameter": "start_position",
+          "expected": "SL: each rep starts and ends on the floor (like a deadlift). WM: lift the bar from the floor, hinge forward and hold the weight hanging. FB: lower back to about knee height and repeat.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "WM",
+            "FB"
+          ],
+          "numeric": null,
+          "per_source": {
+            "SL": "each rep from the floor",
+            "WM": "hang at arm's length after lifting",
+            "FB": "return to knee height between reps"
+          }
+        },
+        {
+          "id": "row_02",
+          "phase": "setup",
+          "body_part": "feet_knees",
+          "parameter": "stance",
+          "expected": "Feet about shoulder-width, knees slightly bent.",
+          "agreement": "consensus",
+          "source_ids": [
+            "WM",
+            "LS",
+            "VG"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "row_03",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "grip",
+          "expected": "Overhand (palms down). Width: SL medium; FB shoulder-width; LS and VG slightly wider than shoulder-width. FB: underhand grip shifts load toward biceps and lower lats.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "FB",
+            "LS",
+            "VG"
+          ],
+          "numeric": null,
+          "per_source": {
+            "SL": "medium",
+            "FB": "shoulder-width",
+            "LS": "slightly wider than shoulder-width",
+            "VG": "slightly wider than shoulder-width"
+          }
+        },
+        {
+          "id": "row_04",
+          "phase": "setup",
+          "body_part": "torso",
+          "parameter": "torso_angle",
+          "expected": "SL: torso slightly above horizontal (nearly parallel to floor). FB, HL, LS, VG: about 45 deg to the floor (HL: 'no further' than 45). WM: chest about 60 deg to the floor. Angle must stay constant during the set.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "FB",
+            "HL",
+            "LS",
+            "VG",
+            "WM"
+          ],
+          "numeric": {
+            "value": "45",
+            "unit": "degrees",
+            "note": "FB, HL, LS, VG; SL near 0-20 deg; WM 60 deg"
+          },
+          "per_source": {
+            "SL": "slightly above horizontal",
+            "FB": "45 deg",
+            "HL": "45 deg, no further",
+            "LS": "45 deg",
+            "VG": "45 deg",
+            "WM": "60 deg with the ground"
+          },
+          "detection_hint_inferred_by_assistant": "shoulder-hip line angle vs. horizontal, held steady during the set"
+        },
+        {
+          "id": "row_05",
+          "phase": "setup",
+          "body_part": "spine",
+          "parameter": "spine_shape",
+          "expected": "Back flat/neutral, core braced, chest up; neck neutral looking slightly down. SL: neutral spine to avoid disc injury.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "WM",
+            "FB",
+            "LS"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "lumbar flexion should not increase between rep start and top"
+        },
+        {
+          "id": "row_06",
+          "phase": "pull",
+          "body_part": "bar",
+          "parameter": "pull_target",
+          "expected": "SL: lower chest. VG: lower chest. LS: lower ribcage. FB: just above the navel. WM: toward the chest.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "VG",
+            "LS",
+            "FB",
+            "WM"
+          ],
+          "numeric": null,
+          "per_source": {
+            "SL": "lower chest",
+            "VG": "lower chest",
+            "LS": "lower ribcage",
+            "FB": "just above belly button",
+            "WM": "toward the chest"
+          }
+        },
+        {
+          "id": "row_07",
+          "phase": "pull",
+          "body_part": "elbows",
+          "parameter": "elbow_path",
+          "expected": "SL: elbows locked at the bottom, pull them toward the ceiling and past/behind the torso. FB: elbows about 45 deg to torso. LS/VG: elbows close to the body.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "FB",
+            "LS",
+            "VG"
+          ],
+          "numeric": {
+            "value": 45,
+            "unit": "degrees",
+            "note": "FB; elbow angle relative to torso"
+          },
+          "per_source": {
+            "SL": "elbows pass behind the torso",
+            "FB": "about 45 deg to torso",
+            "LS": "close to body",
+            "VG": "close to body"
+          }
+        },
+        {
+          "id": "row_08",
+          "phase": "top",
+          "body_part": "shoulder_blades",
+          "parameter": "scapular_squeeze",
+          "expected": "Squeeze shoulder blades together at the top.",
+          "agreement": "consensus",
+          "source_ids": [
+            "LS",
+            "VG"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "row_09",
+          "phase": "descent",
+          "body_part": "arms",
+          "parameter": "lowering",
+          "expected": "Lower under control until arms are fully extended; torso stays stable (no swinging).",
+          "agreement": "consensus",
+          "source_ids": [
+            "FB",
+            "LS",
+            "VG",
+            "WM"
+          ],
+          "numeric": null
+        }
+      ],
+      "breathing": [
+        {
+          "text": "SL: take a big breath, hold it and pull the bar to the chest.",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "text": "VG: exhale while pulling, inhale while lowering.",
+          "source_ids": [
+            "VG"
+          ]
+        }
+      ],
+      "breathing_agreement": "conflict (SL hold vs VG exhale on pull)",
+      "common_errors": [
+        {
+          "error": "Rounding the back",
+          "correct_instead": "Keep back flat/neutral",
+          "source_ids": [
+            "SL",
+            "LS",
+            "FB"
+          ]
+        },
+        {
+          "error": "Using momentum / swinging the torso",
+          "correct_instead": "Reduce weight, keep torso steady",
+          "source_ids": [
+            "VG",
+            "WM"
+          ]
+        },
+        {
+          "error": "Too much weight -> form loss",
+          "correct_instead": "Lower the weight",
+          "source_ids": [
+            "FB",
+            "VG"
+          ]
+        },
+        {
+          "error": "Torso rises with each rep",
+          "correct_instead": "Keep the torso angle constant",
+          "source_ids": [
+            "WM"
+          ]
+        }
+      ],
+      "load_and_reps": [
+        {
+          "text": "No absolute loads given; lighter with proper form beats heavier with poor form (VG).",
+          "source_ids": [
+            "VG"
+          ]
+        }
+      ],
+      "variations_named_by_sources": [
+        "reverse (underhand) grip",
+        "dumbbell row",
+        "single-arm supported row",
+        "incline-bench supported row",
+        "T-bar",
+        "trap bar",
+        "EZ bar",
+        "chest-supported row",
+        "inverted row"
+      ],
+      "safety": [],
+      "not_specified_by_sources": [
+        "Resolution of the torso-angle disagreement",
+        "Exact bar-to-body contact point"
+      ]
+    },
+    {
+      "id": "overhead_press",
+      "name": "Barbell Overhead (Standing) Press",
+      "body_region": "shoulders",
+      "equipment": [
+        "barbell in a rack at upper-chest height (CW, PT)"
+      ],
+      "muscles_named_by_sources": [
+        "deltoids",
+        "triceps",
+        "core",
+        "glutes (brace)"
+      ],
+      "sources": [
+        {
+          "id": "SL",
+          "name": "StrongLifts - How to Overhead Press",
+          "url": "https://stronglifts.com/overhead-press/",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "PT",
+          "name": "PowerliftingTechnique - Overhead Press Full Guide",
+          "url": "https://powerliftingtechnique.com/overhead-press-full-guide-with-demo/",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "CW",
+          "name": "Coachway - How to Overhead Press",
+          "url": "https://coachway.io/articles/how-to-overhead-press/",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "SA",
+          "name": "SensAI - How to Overhead Press",
+          "url": "https://www.sensai.fit/blog/how-to-overhead-press",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "VT",
+          "name": "Vitality - How to do Overhead Press",
+          "url": "https://shopvitality.com/blogs/vitality-fitness/how-to-do-overhead-press",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "SP",
+          "name": "Speediance - Barbell Overhead Press",
+          "url": "https://speediance.com/blogs/fitness/barbell-overhead-press",
+          "read_depth": "excerpt (supplementary)"
+        }
+      ],
+      "checkpoints": [
+        {
+          "id": "oh_01",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "grip_width",
+          "expected": "SL: narrow grip so the forearms are vertical at the bottom (avoids elbow flare/shoulder pain). PT: slightly wider than shoulder-width; short answer 'just outside the shoulders'. CW: just outside shoulder width. SP: about 1.5x shoulder width.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "PT",
+            "CW",
+            "SP"
+          ],
+          "numeric": {
+            "value": 1.5,
+            "unit": "x shoulder width",
+            "note": "SP only"
+          },
+          "per_source": {
+            "SL": "narrow, vertical forearms",
+            "PT": "just outside shoulders",
+            "CW": "just outside shoulders",
+            "SP": "1.5x shoulder width"
+          },
+          "detection_hint_inferred_by_assistant": "forearms near-vertical in frontal view at the bottom"
+        },
+        {
+          "id": "oh_02",
+          "phase": "setup",
+          "body_part": "wrists",
+          "parameter": "wrist_stack",
+          "expected": "Wrists stacked over the forearms/elbows (forearms vertical).",
+          "agreement": "consensus",
+          "source_ids": [
+            "PT",
+            "VT"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "oh_03",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "grip_type",
+          "expected": "Full grip, squeeze the bar; no thumbless grip.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "oh_04",
+          "phase": "start",
+          "body_part": "bar",
+          "parameter": "rack_position",
+          "expected": "Bar resting on the front shoulders / upper chest; unrack with elbows slightly forward.",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "PT",
+            "CW",
+            "VT"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "oh_05",
+          "phase": "setup",
+          "body_part": "feet",
+          "parameter": "stance",
+          "expected": "SL: legs straight. PT: feet under hips, or heels together for a military press. CW: feet about hip-width, knees soft. VT: strict military stance (heels together) is harder.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "PT",
+            "CW",
+            "VT"
+          ],
+          "numeric": null,
+          "per_source": {
+            "SL": "legs straight",
+            "PT": "under hips or heels together",
+            "CW": "hip-width, soft knees",
+            "VT": "heels together = harder"
+          }
+        },
+        {
+          "id": "oh_06",
+          "phase": "setup",
+          "body_part": "torso_glutes",
+          "parameter": "brace",
+          "expected": "Squeeze glutes and abs, keep the ribs down so the pelvis stays stacked under the ribs and the lower back does not arch.",
+          "agreement": "consensus",
+          "source_ids": [
+            "PT",
+            "CW",
+            "SA",
+            "VT"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "rib-to-pelvis alignment; lumbar extension angle small"
+        },
+        {
+          "id": "oh_07",
+          "phase": "press",
+          "body_part": "bar",
+          "parameter": "bar_path",
+          "expected": "Straight vertical line over the mid-foot, close to the face; not a forward arc or outward diagonal.",
+          "agreement": "consensus",
+          "source_ids": [
+            "PT",
+            "SA",
+            "SL",
+            "CW"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "bar keypoint x near mid-foot x at the top"
+        },
+        {
+          "id": "oh_08",
+          "phase": "press",
+          "body_part": "head",
+          "parameter": "head_through",
+          "expected": "Pull the head/chin slightly back as the bar passes the face, then push the head 'through the window' once the bar clears the forehead.",
+          "agreement": "consensus",
+          "source_ids": [
+            "PT",
+            "CW",
+            "SA",
+            "VT"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "oh_09",
+          "phase": "lockout",
+          "body_part": "arms_shoulders",
+          "parameter": "lockout",
+          "expected": "Elbows straight; bar balanced over shoulders and mid-foot; shrug the shoulders up at the top; hold about 1 second; arms vertical.",
+          "agreement": "consensus",
+          "source_ids": [
+            "PT",
+            "SL",
+            "VT",
+            "SA"
+          ],
+          "numeric": {
+            "value": 1,
+            "unit": "second",
+            "note": "hold at lockout, newsletter excerpt of PT"
+          }
+        },
+        {
+          "id": "oh_10",
+          "phase": "press",
+          "body_part": "shoulder_blades",
+          "parameter": "scapular_cue",
+          "expected": "SL excerpt states: do not squeeze the shoulder blades.",
+          "agreement": "single_source",
+          "source_ids": [
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "oh_11",
+          "phase": "descent",
+          "body_part": "bar",
+          "parameter": "lowering",
+          "expected": "Lower the bar back along the same path to the front of the shoulders, controlled (do not drop).",
+          "agreement": "consensus",
+          "source_ids": [
+            "CW",
+            "PT"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "oh_12",
+          "phase": "press",
+          "body_part": "lower_back",
+          "parameter": "layback_arch",
+          "expected": "Slight arch tolerated, notable arch not (SP). Strict press = zero layback; excess layback turns it into a standing incline press (PT newsletter).",
+          "agreement": "consensus",
+          "source_ids": [
+            "SP",
+            "PT"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "trunk extension angle at the top"
+        },
+        {
+          "id": "oh_13",
+          "phase": "setup",
+          "body_part": "breath",
+          "parameter": "brace_breath",
+          "expected": "Pull a breath low into the belly, brace, squeeze the glutes before the bar leaves the shoulders.",
+          "agreement": "consensus",
+          "source_ids": [
+            "CW",
+            "PT"
+          ],
+          "numeric": null
+        }
+      ],
+      "breathing": [
+        {
+          "text": "Full belly breath and brace before pressing.",
+          "source_ids": [
+            "CW",
+            "PT"
+          ]
+        }
+      ],
+      "breathing_agreement": "consensus",
+      "common_errors": [
+        {
+          "error": "Leaning back (standing incline press)",
+          "correct_instead": "Squeeze glutes, ribs down, lighten load",
+          "source_ids": [
+            "PT",
+            "CW"
+          ]
+        },
+        {
+          "error": "Flaring elbows",
+          "correct_instead": "Narrower grip so forearms stay vertical",
+          "source_ids": [
+            "SL",
+            "VT"
+          ]
+        },
+        {
+          "error": "Bar drifting in front",
+          "correct_instead": "Vertical path, head through",
+          "source_ids": [
+            "PT"
+          ]
+        },
+        {
+          "error": "Diagonal / outward bar path",
+          "correct_instead": "Push head through after the forehead",
+          "source_ids": [
+            "PT"
+          ]
+        },
+        {
+          "error": "Not pushing the head through at lockout",
+          "correct_instead": "Head through, shrug",
+          "source_ids": [
+            "PT",
+            "SA"
+          ]
+        },
+        {
+          "error": "Thumbless grip",
+          "correct_instead": "Full grip",
+          "source_ids": [
+            "SL"
+          ]
+        },
+        {
+          "error": "Grip too wide or too narrow",
+          "correct_instead": "Just outside shoulders",
+          "source_ids": [
+            "SP",
+            "PT"
+          ]
+        }
+      ],
+      "load_and_reps": [
+        {
+          "text": "No absolute load; lower weight if form fails (PT).",
+          "source_ids": [
+            "PT"
+          ]
+        }
+      ],
+      "safety": [
+        "SL: you cannot get stuck under the bar; if it passes the head you can finish and control it."
+      ],
+      "variations_named_by_sources": [
+        "military press",
+        "seated press",
+        "Arnold press",
+        "dumbbell press"
+      ],
+      "not_specified_by_sources": [
+        "Exact elbow angle in degrees",
+        "Exact layback tolerance in degrees"
+      ]
+    },
+    {
+      "id": "barbell_curl",
+      "name": "Standing Barbell Biceps Curl",
+      "body_region": "arms_biceps",
+      "equipment": [
+        "straight barbell"
+      ],
+      "muscles_named_by_sources": [
+        "biceps brachii",
+        "brachialis (reverse grip)",
+        "forearms"
+      ],
+      "sources": [
+        {
+          "id": "RF",
+          "name": "Rep Fitness - How to Do Barbell Curls",
+          "url": "https://repfitness.com/blogs/training/how-to-do-barbell-curls-with-perfect-form",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "FB",
+          "name": "Fitbod - Barbell Curl",
+          "url": "https://fitbod.me/exercises/barbell-curl",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "LS",
+          "name": "Liftosaur - Barbell Bicep Curl",
+          "url": "https://www.liftosaur.com/exercises/barbell-bicep-curl",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "VT",
+          "name": "Vitality - Barbell Bicep Curl",
+          "url": "https://shopvitality.com/blogs/vitality-fitness/how-to-do-barbell-bicep-curl",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "PF",
+          "name": "Planfit - Barbell Bicep Curl",
+          "url": "https://planfit.ai/exercise/7001",
+          "read_depth": "excerpt (supplementary)"
+        }
+      ],
+      "checkpoints": [
+        {
+          "id": "cu_01",
+          "phase": "setup",
+          "body_part": "feet",
+          "parameter": "stance",
+          "expected": "Feet about shoulder-width apart, standing tall.",
+          "agreement": "consensus",
+          "source_ids": [
+            "RF",
+            "LS",
+            "VT",
+            "PF"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "cu_02",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "grip",
+          "expected": "Underhand (supinated) grip, hands about shoulder-width. VT: just outside shoulders; narrower emphasizes the long head, wider the short head. FB: palms facing away, bar just below waist height.",
+          "agreement": "consensus",
+          "source_ids": [
+            "RF",
+            "FB",
+            "LS",
+            "VT"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "cu_03",
+          "phase": "setup",
+          "body_part": "body",
+          "parameter": "posture",
+          "expected": "Tall posture; squeeze glutes, brace core, shoulder blades slightly together (RF); spine neutral (LS); brace by breathing into the stomach (FB).",
+          "agreement": "consensus",
+          "source_ids": [
+            "RF",
+            "FB",
+            "LS"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "cu_04",
+          "phase": "curl",
+          "body_part": "elbows",
+          "parameter": "elbow_position",
+          "expected": "Elbows pinned to the sides, upper arms still, no drifting forward or outward.",
+          "agreement": "consensus",
+          "source_ids": [
+            "RF",
+            "FB",
+            "LS",
+            "VT",
+            "PF"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "elbow keypoint x stays close to hip x; shoulder flexion angle small"
+        },
+        {
+          "id": "cu_05",
+          "phase": "curl",
+          "body_part": "bar",
+          "parameter": "top_position",
+          "expected": "Curl toward the shoulders; squeeze the biceps at the top with straight wrists; do not lock the elbows.",
+          "agreement": "consensus",
+          "source_ids": [
+            "RF",
+            "FB",
+            "LS",
+            "VT",
+            "PF"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "cu_06",
+          "phase": "bottom",
+          "body_part": "arms",
+          "parameter": "bottom_position",
+          "expected": "Keep a slight bend in the elbows at the bottom (RF); keep constant tension on the biceps (FB).",
+          "agreement": "consensus",
+          "source_ids": [
+            "RF",
+            "FB"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "cu_07",
+          "phase": "whole_rep",
+          "body_part": "torso",
+          "parameter": "no_swing",
+          "expected": "No swinging, no hip drive, no leaning back; use wall support if needed (VT).",
+          "agreement": "consensus",
+          "source_ids": [
+            "RF",
+            "LS",
+            "VT",
+            "PF"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "trunk angle change across the rep small"
+        },
+        {
+          "id": "cu_08",
+          "phase": "whole_rep",
+          "body_part": "breath",
+          "parameter": "breathing",
+          "expected": "FB: exhale and lower. PF: exhale as you curl up, inhale as you lower.",
+          "agreement": "conflict",
+          "source_ids": [
+            "FB",
+            "PF"
+          ],
+          "numeric": null,
+          "per_source": {
+            "FB": "exhale while lowering",
+            "PF": "exhale while curling, inhale while lowering"
+          }
+        }
+      ],
+      "breathing": [
+        {
+          "text": "Sources disagree on which phase gets the exhale.",
+          "source_ids": [
+            "FB",
+            "PF"
+          ]
+        }
+      ],
+      "breathing_agreement": "conflict",
+      "common_errors": [
+        {
+          "error": "Swinging torso / hip momentum",
+          "correct_instead": "Elbows pinned, lighter weight",
+          "source_ids": [
+            "VT",
+            "RF",
+            "PF"
+          ]
+        },
+        {
+          "error": "Elbows drift forward or outward",
+          "correct_instead": "Keep elbows glued to the torso",
+          "source_ids": [
+            "VT",
+            "RF"
+          ]
+        },
+        {
+          "error": "Locking elbows at bottom/top (lost tension)",
+          "correct_instead": "Keep a slight bend",
+          "source_ids": [
+            "RF",
+            "LS"
+          ]
+        },
+        {
+          "error": "No upper-back engagement",
+          "correct_instead": "Engage scapular stabilizers",
+          "source_ids": [
+            "RF"
+          ]
+        },
+        {
+          "error": "Too much weight",
+          "correct_instead": "Reduce load to keep form",
+          "source_ids": [
+            "RF",
+            "PF"
+          ]
+        }
+      ],
+      "load_and_reps": [
+        {
+          "text": "No numeric sets/reps captured from the excerpts read.",
+          "source_ids": [
+            "RF",
+            "FB",
+            "LS"
+          ]
+        }
+      ],
+      "variations_named_by_sources": [
+        "reverse curl",
+        "wrist curl",
+        "seated curl",
+        "preacher curl",
+        "EZ bar",
+        "dumbbell",
+        "cable",
+        "narrow/wide grip"
+      ],
+      "safety": [],
+      "not_specified_by_sources": [
+        "Elbow flexion angle at the top",
+        "Rep tempo in seconds"
+      ]
+    },
+    {
+      "id": "parallel_bar_dip",
+      "name": "Parallel-Bar Dip",
+      "body_region": "chest_triceps",
+      "equipment": [
+        "fixed, stable parallel bars (SL); avoid rings (SL)"
+      ],
+      "muscles_named_by_sources": [
+        "triceps",
+        "chest (pectorals)",
+        "front shoulders",
+        "back/lats (stabilizing)"
+      ],
+      "sources": [
+        {
+          "id": "SL",
+          "name": "StrongLifts - How to Do Dips",
+          "url": "https://stronglifts.com/dips/",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "FB",
+          "name": "Fitbod - Dip and Chest Dip",
+          "url": "https://fitbod.me/exercises/dip",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "GF",
+          "name": "GetFitCraft - Parallel-Bar Dips",
+          "url": "https://getfitcraft.com/exercises/parallel-bar-dips",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "BB",
+          "name": "BullBar - Dips articles",
+          "url": "https://bullbarfit.com/blogs/updates/dips-for-men-what-two-centuries-of-parallel-bars-can-teach-you-about-upper-body-strength",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "CV",
+          "name": "Caliverse - Dips",
+          "url": "https://www.caliverse.app/exercises/dips-1415",
+          "read_depth": "excerpt (supplementary)"
+        }
+      ],
+      "checkpoints": [
+        {
+          "id": "dp_01",
+          "phase": "setup",
+          "body_part": "hands",
+          "parameter": "grip",
+          "expected": "Neutral grip, palms facing each other (GF); grip width follows the bars (SL).",
+          "agreement": "consensus",
+          "source_ids": [
+            "GF",
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "dp_02",
+          "phase": "start",
+          "body_part": "arms",
+          "parameter": "top_position",
+          "expected": "SL: jump up and straighten the arms. CV: full extension at the top. FB (dip): start with elbows slightly flexed; FB (chest dip): do not lock the elbows at the top.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "CV",
+            "FB"
+          ],
+          "numeric": null,
+          "per_source": {
+            "SL": "straight arms",
+            "CV": "full extension",
+            "FB": "slightly flexed / not locked"
+          }
+        },
+        {
+          "id": "dp_03",
+          "phase": "start",
+          "body_part": "core",
+          "parameter": "bracing",
+          "expected": "Brace the core and glutes/legs for a neutral spine; legs straight when targeting triceps (FB).",
+          "agreement": "consensus",
+          "source_ids": [
+            "FB",
+            "CV"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "dp_04",
+          "phase": "descent",
+          "body_part": "torso",
+          "parameter": "torso_lean",
+          "expected": "SL and FB: lean slightly forward (more lean = more chest, FB). GF: triceps emphasis = torso nearly vertical, eyes forward; chest emphasis = lean 15-30 deg forward, chin slightly tucked. Keep angle constant during the set (GF).",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "FB",
+            "GF"
+          ],
+          "numeric": {
+            "value": "15-30",
+            "unit": "degrees",
+            "note": "GF, forward lean for chest emphasis"
+          },
+          "detection_hint_inferred_by_assistant": "shoulder-hip line angle vs. vertical, steady across reps"
+        },
+        {
+          "id": "dp_05",
+          "phase": "descent",
+          "body_part": "shoulders",
+          "parameter": "shoulder_position",
+          "expected": "FB: shoulders rolled back. GF: depress shoulders before each rep, chest open (packed shoulder). CV: shoulders down, scapulae slightly retracted. No shrugging.",
+          "agreement": "consensus",
+          "source_ids": [
+            "FB",
+            "GF",
+            "CV"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "dp_06",
+          "phase": "descent",
+          "body_part": "elbows",
+          "parameter": "elbow_path",
+          "expected": "FB: elbows close to the body (chest-dip version: slightly flared). GF: do not flare; flare shifts load to the front of the shoulder. BB: elbows track diagonally behind, about 30-45 deg from the torso. CV: elbows track back.",
+          "agreement": "conflict",
+          "source_ids": [
+            "FB",
+            "GF",
+            "BB",
+            "CV"
+          ],
+          "numeric": {
+            "value": "30-45",
+            "unit": "degrees",
+            "note": "BB, elbow angle from torso"
+          },
+          "per_source": {
+            "FB": "close to body (dip); slight flare (chest dip)",
+            "GF": "do not flare",
+            "BB": "30-45 deg from torso",
+            "CV": "track back"
+          }
+        },
+        {
+          "id": "dp_07",
+          "phase": "bottom",
+          "body_part": "arms",
+          "parameter": "depth",
+          "expected": "SL: shoulders go below the elbows. FB: elbows reach 90 deg. GF: shoulders about level with elbows / upper arms parallel; cap at parallel even more strictly with added weight. CV: upper arms parallel or a comfortable depth. BB: depth you can control without a kick or shrug.",
+          "agreement": "conflict",
+          "source_ids": [
+            "SL",
+            "FB",
+            "GF",
+            "CV",
+            "BB"
+          ],
+          "numeric": {
+            "value": 90,
+            "unit": "degrees",
+            "note": "elbow angle, FB"
+          },
+          "per_source": {
+            "SL": "shoulders below elbows",
+            "FB": "elbows 90 deg",
+            "GF": "shoulders level with elbows",
+            "CV": "upper arms parallel / comfortable",
+            "BB": "controllable depth only"
+          },
+          "detection_hint_inferred_by_assistant": "shoulder keypoint y vs elbow keypoint y at the bottom"
+        },
+        {
+          "id": "dp_08",
+          "phase": "descent",
+          "body_part": "tempo",
+          "parameter": "lowering",
+          "expected": "Lower slowly under control (SL); do not force depth before the shoulder can control it (BB).",
+          "agreement": "consensus",
+          "source_ids": [
+            "SL",
+            "BB"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "dp_09",
+          "phase": "ascent",
+          "body_part": "arms",
+          "parameter": "press",
+          "expected": "Drive the palms down through the bars and extend the elbows back to the start.",
+          "agreement": "consensus",
+          "source_ids": [
+            "FB",
+            "SL"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "dp_10",
+          "phase": "whole_rep",
+          "body_part": "chest",
+          "parameter": "chest_position",
+          "expected": "Keep the chest up as much as possible (FB); chest up, shoulders down (CV).",
+          "agreement": "consensus",
+          "source_ids": [
+            "FB",
+            "CV"
+          ],
+          "numeric": null
+        }
+      ],
+      "breathing": [],
+      "breathing_agreement": "not_specified_by_sources",
+      "common_errors": [
+        {
+          "error": "Forcing depth before the shoulders can control it",
+          "correct_instead": "Stop at controllable depth",
+          "source_ids": [
+            "BB"
+          ]
+        },
+        {
+          "error": "Flaring elbows",
+          "correct_instead": "Track elbows 30-45 deg behind",
+          "source_ids": [
+            "GF",
+            "BB",
+            "CV"
+          ]
+        },
+        {
+          "error": "Inconsistent torso angle through the set",
+          "correct_instead": "Hold one torso angle",
+          "source_ids": [
+            "GF"
+          ]
+        },
+        {
+          "error": "Shrugging shoulders",
+          "correct_instead": "Depress shoulders each rep",
+          "source_ids": [
+            "GF",
+            "CV"
+          ]
+        },
+        {
+          "error": "Using momentum / loose torso",
+          "correct_instead": "Brace the torso",
+          "source_ids": [
+            "CV",
+            "BB"
+          ]
+        },
+        {
+          "error": "Ring dips before you are ready",
+          "correct_instead": "Use fixed parallel bars",
+          "source_ids": [
+            "SL"
+          ]
+        }
+      ],
+      "load_and_reps": [
+        {
+          "text": "Full dips: 3 sets of 8-12 controlled reps (BB).",
+          "source_ids": [
+            "BB"
+          ]
+        },
+        {
+          "text": "Progression: when you can do 10 negatives with proper form you can do one dip (SL).",
+          "source_ids": [
+            "SL"
+          ]
+        }
+      ],
+      "progressions": [
+        "bench dips (entry-level triceps, GF)",
+        "negatives (SL)"
+      ],
+      "safety": [],
+      "not_specified_by_sources": [
+        "Resolution of the depth disagreement",
+        "Breathing"
+      ]
+    },
+    {
+      "id": "forward_lunge",
+      "name": "Forward Lunge (bodyweight)",
+      "body_region": "legs_glutes",
+      "equipment": [
+        "none (bodyweight)"
+      ],
+      "muscles_named_by_sources": [
+        "quadriceps",
+        "glutes",
+        "hamstrings",
+        "core"
+      ],
+      "sources": [
+        {
+          "id": "NS",
+          "name": "NSCA - The Undervalued Lunge (PTQ 4.4.9)",
+          "url": "https://dxpprod.nsca.com/contentassets/24dd7222ed1b4caeb8a0a46b81bd11f3/ptq-4.4.9-the-undervalued-lunge.pdf",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "PE",
+          "name": "Peloton - How to Do Lunges",
+          "url": "https://www.onepeloton.com/en-GB/blog/how-to-do-lunges",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "TG",
+          "name": "Tom's Guide - How to Do a Lunge",
+          "url": "https://www.tomsguide.com/how-to/how-to-do-a-lunge",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "EX",
+          "name": "Exakt Health - Master the Forward Lunge",
+          "url": "https://www.exakthealth.com/en/blog/take-a-step-forward-with-your-lunges-a-guide-to-proper-form-and-variations-for-runners",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "CV",
+          "name": "Caliverse - Forward Lunge",
+          "url": "https://www.caliverse.app/exercises/forward-lunge-43",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "LC",
+          "name": "Latah County health article - Proper Lunge",
+          "url": "https://phdns.latahcountyid.gov/article/how-to-do-a-proper-lunge-perfect-form-guide",
+          "read_depth": "excerpt (supplementary)"
+        }
+      ],
+      "checkpoints": [
+        {
+          "id": "lu_01",
+          "phase": "setup",
+          "body_part": "feet",
+          "parameter": "start_stance",
+          "expected": "PE: feet hip-width apart. CV: feet shoulder-width apart, neutral spine, chest open, weight even.",
+          "agreement": "conflict",
+          "source_ids": [
+            "PE",
+            "CV"
+          ],
+          "numeric": null,
+          "per_source": {
+            "PE": "hip-width",
+            "CV": "shoulder-width"
+          }
+        },
+        {
+          "id": "lu_02",
+          "phase": "step",
+          "body_part": "feet",
+          "parameter": "step_length",
+          "expected": "NS: distance between feet longer than a normal walking stride; a too-short stride is a common error. CV: one to one-and-a-half foot lengths. TG: far enough to allow a 90 deg bend in the front leg.",
+          "agreement": "consensus",
+          "source_ids": [
+            "NS",
+            "CV",
+            "TG"
+          ],
+          "numeric": {
+            "value": "1-1.5",
+            "unit": "foot lengths",
+            "note": "CV"
+          },
+          "detection_hint_inferred_by_assistant": "front ankle to rear ankle horizontal distance vs. leg/foot length"
+        },
+        {
+          "id": "lu_03",
+          "phase": "step",
+          "body_part": "front_foot",
+          "parameter": "landing",
+          "expected": "Land with the heel first and keep the front heel down/planted; knee tracks in line with the foot.",
+          "agreement": "consensus",
+          "source_ids": [
+            "EX",
+            "LC",
+            "CV"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "lu_04",
+          "phase": "bottom",
+          "body_part": "front_knee",
+          "parameter": "position",
+          "expected": "Front knee stacked directly above the ankle, front shin close to vertical, knee not past the toes.",
+          "agreement": "consensus",
+          "source_ids": [
+            "NS",
+            "TG",
+            "CV",
+            "LC"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "front knee x vs front ankle x in side view"
+        },
+        {
+          "id": "lu_05",
+          "phase": "bottom",
+          "body_part": "knees_hips",
+          "parameter": "joint_angles",
+          "expected": "Front and back knee about 90 deg; front thigh near parallel to the floor; hip, knee and ankle angles no less than 90 deg (NS).",
+          "agreement": "consensus",
+          "source_ids": [
+            "NS",
+            "PE",
+            "TG",
+            "CV",
+            "LC"
+          ],
+          "numeric": {
+            "value": 90,
+            "unit": "degrees",
+            "note": "knee angle, both legs"
+          },
+          "detection_hint_inferred_by_assistant": "knee flexion of both legs at the bottom"
+        },
+        {
+          "id": "lu_06",
+          "phase": "bottom",
+          "body_part": "rear_knee",
+          "parameter": "position",
+          "expected": "TG: back knee under the hip. CV: hover, do not let the back knee touch the ground (maintain tension). LC: stop when both knees near 90 deg or when the back knee lightly touches the ground briefly.",
+          "agreement": "conflict",
+          "source_ids": [
+            "TG",
+            "CV",
+            "LC"
+          ],
+          "numeric": null,
+          "per_source": {
+            "TG": "under the hip",
+            "CV": "hover; no touch",
+            "LC": "light brief touch allowed"
+          }
+        },
+        {
+          "id": "lu_07",
+          "phase": "bottom",
+          "body_part": "knees_feet",
+          "parameter": "alignment",
+          "expected": "Front foot/knee point straight forward (knee must not turn inward); rear foot/knee also straight forward (rotating out adds torque).",
+          "agreement": "single_source",
+          "source_ids": [
+            "NS"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "knee caving: front knee x medial to ankle x"
+        },
+        {
+          "id": "lu_08",
+          "phase": "whole_rep",
+          "body_part": "torso",
+          "parameter": "posture",
+          "expected": "Torso upright, spine perpendicular to the floor, shoulders back and down, core braced, pelvis level; no forward lean.",
+          "agreement": "consensus",
+          "source_ids": [
+            "NS",
+            "PE",
+            "TG",
+            "EX",
+            "CV"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "trunk angle vs vertical small and constant"
+        },
+        {
+          "id": "lu_09",
+          "phase": "ascent",
+          "body_part": "front_leg",
+          "parameter": "return",
+          "expected": "Drive up through the front heel (glutes/hamstrings) and return to standing each rep.",
+          "agreement": "consensus",
+          "source_ids": [
+            "CV",
+            "PE",
+            "TG"
+          ],
+          "numeric": null
+        }
+      ],
+      "breathing": [],
+      "breathing_agreement": "not_specified_by_sources",
+      "common_errors": [
+        {
+          "error": "Front knee collapses inward",
+          "correct_instead": "Keep knee tracking over the foot",
+          "source_ids": [
+            "NS",
+            "PE",
+            "TG",
+            "EX",
+            "CV"
+          ],
+          "reason_given_by_source": "torque stress on the knee (NS)"
+        },
+        {
+          "error": "Stride too short",
+          "correct_instead": "Step longer than a walking stride",
+          "source_ids": [
+            "NS"
+          ]
+        },
+        {
+          "error": "Over-striding",
+          "correct_instead": "Step 1-1.5 foot lengths; land on the heel",
+          "source_ids": [
+            "CV"
+          ]
+        },
+        {
+          "error": "Forward torso lean",
+          "correct_instead": "Stay upright, engage core",
+          "source_ids": [
+            "NS",
+            "EX",
+            "CV"
+          ]
+        },
+        {
+          "error": "Front knee passes toes",
+          "correct_instead": "Keep it over the ankle",
+          "source_ids": [
+            "CV"
+          ]
+        },
+        {
+          "error": "Too much pressure on the front of the foot",
+          "correct_instead": "Press through the heel",
+          "source_ids": [
+            "PE"
+          ]
+        },
+        {
+          "error": "Rotating the back knee/foot outward",
+          "correct_instead": "Point rear foot straight forward",
+          "source_ids": [
+            "NS"
+          ]
+        }
+      ],
+      "load_and_reps": [
+        {
+          "text": "No sets/reps/weight from the excerpts read (walking lunge: 10-20 steps in LC).",
+          "source_ids": [
+            "LC"
+          ]
+        }
+      ],
+      "variations_named_by_sources": [
+        "reverse lunge (easier balance and stride control per PE, TG)",
+        "walking lunge",
+        "curtsy lunge",
+        "half lunge",
+        "front-foot-elevated lunge",
+        "box/step lunge (NS)",
+        "assisted lunge"
+      ],
+      "safety": [],
+      "not_specified_by_sources": [
+        "Resolution of the rear-knee touch disagreement",
+        "Breathing",
+        "Tempo"
+      ]
+    },
+    {
+      "id": "forearm_plank",
+      "name": "Forearm Plank",
+      "body_region": "core",
+      "equipment": [
+        "none"
+      ],
+      "muscles_named_by_sources": [
+        "abdominals",
+        "lower back",
+        "shoulders",
+        "glutes",
+        "quads (stability)"
+      ],
+      "sources": [
+        {
+          "id": "IH",
+          "name": "Intermountain Healthcare - What's the big deal with planks",
+          "url": "https://intermountainhealthcare.org/blogs/whats-the-big-deal-with-planks",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "MS",
+          "name": "Muscle & Strength - Plank exercise profile",
+          "url": "https://www.muscleandstrength.com/node/3628",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "FV",
+          "name": "FitnessVolt - Mastering Proper Plank Form",
+          "url": "https://fitnessvolt.com/proper-plank-form/",
+          "read_depth": "excerpt"
+        },
+        {
+          "id": "TG",
+          "name": "Tom's Guide - How long should you hold a plank",
+          "url": "https://www.tomsguide.com/uk/how-to/plank-exercise-how-long-do-you-need-to-hold-to-work-your-abs",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "SH",
+          "name": "Shape via Yahoo - How long to hold a plank",
+          "url": "https://www.yahoo.com/news/long-really-hold-plank-140000575.html",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "DN",
+          "name": "Doctors Note - How to do a plank",
+          "url": "https://ubiehealth.com/doctors-note/how-to-do-plank-hurts-back-medically-steps-tips-3741e5",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "SP",
+          "name": "Speediance - Plank exercise guide",
+          "url": "https://eu.speediance.com/en/blogs/fitness/plank-exercise-guide",
+          "read_depth": "excerpt (supplementary)"
+        },
+        {
+          "id": "OL",
+          "name": "Olaben - What Is a Plank? How to Plank Correctly",
+          "url": "https://olaben.com/blogs/olaben-blog/what-is-a-plank-how-to-plank-correctly",
+          "read_depth": "excerpt (supplementary)"
+        }
+      ],
+      "checkpoints": [
+        {
+          "id": "pl_01",
+          "phase": "hold",
+          "body_part": "elbows",
+          "parameter": "elbow_position",
+          "expected": "Forearms on the floor, elbows directly under the shoulders, upper arms vertical. SH: if the shoulder is behind the elbow you are holding with the shoulders, not the core. TG: elbows too close to the body or too far forward prevents proper core engagement.",
+          "agreement": "consensus",
+          "source_ids": [
+            "IH",
+            "MS",
+            "FV",
+            "TG",
+            "SH",
+            "DN"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "elbow x approx. shoulder x in side view"
+        },
+        {
+          "id": "pl_02",
+          "phase": "hold",
+          "body_part": "feet",
+          "parameter": "foot_position",
+          "expected": "IH: toes directly under the ankles. MS: feet hip-width apart, toes tucked under. DN: toes tucked under.",
+          "agreement": "consensus",
+          "source_ids": [
+            "IH",
+            "MS",
+            "DN"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "pl_03",
+          "phase": "hold",
+          "body_part": "body",
+          "parameter": "body_line",
+          "expected": "Straight line from head/crown to tailbone and heels; shoulders, hips and feet in line.",
+          "agreement": "consensus",
+          "source_ids": [
+            "IH",
+            "MS",
+            "FV",
+            "TG",
+            "SH",
+            "DN"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "shoulder-hip-ankle collinearity in side view"
+        },
+        {
+          "id": "pl_04",
+          "phase": "hold",
+          "body_part": "hips",
+          "parameter": "hip_height",
+          "expected": "Hips neither sagging nor piked. Dropped hips put the lumbar spine in extension and can cause severe low-back pain (FV); weak abs can make the butt lift (FV).",
+          "agreement": "consensus",
+          "source_ids": [
+            "FV",
+            "TG",
+            "OL",
+            "MS"
+          ],
+          "numeric": null,
+          "detection_hint_inferred_by_assistant": "hip keypoint y relative to the shoulder-ankle line"
+        },
+        {
+          "id": "pl_05",
+          "phase": "hold",
+          "body_part": "neck",
+          "parameter": "head_neck",
+          "expected": "Neutral neck: ears over shoulders (FV); gaze at the floor just ahead of the hands (SH, MS); IH: do not look up or tuck the chin to the chest; TG: looking forward/upward breaks neutral spine.",
+          "agreement": "consensus",
+          "source_ids": [
+            "IH",
+            "MS",
+            "FV",
+            "TG",
+            "SH"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "pl_06",
+          "phase": "hold",
+          "body_part": "core_glutes",
+          "parameter": "muscle_engagement",
+          "expected": "Squeeze glutes and pull the belly toward the spine (IH, MS, DN). FV: tense legs, glutes, chest, shoulders, arms and core. SP: press the elbows into the floor / actively push away from the floor, engage lats.",
+          "agreement": "consensus",
+          "source_ids": [
+            "IH",
+            "MS",
+            "FV",
+            "DN",
+            "SP"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "pl_07",
+          "phase": "hold",
+          "body_part": "breath",
+          "parameter": "breathing",
+          "expected": "Breathe steadily; never hold your breath.",
+          "agreement": "consensus",
+          "source_ids": [
+            "IH",
+            "FV",
+            "DN"
+          ],
+          "numeric": null
+        },
+        {
+          "id": "pl_08",
+          "phase": "hold",
+          "body_part": "time",
+          "parameter": "duration",
+          "expected": "IH: 60 s is a good goal. MS: hold as long as form is good; start at 30 s; add 5-10 s; if 60 s is easy do 3x60 s. SH: about 1 minute with proper form; build from 10 s to 20 s. SP: beginners 20-30 s for 3-4 sets; add about 5 s per week; about 2 min is enough; 3-5 sets at 60-90% of max hold with 60 s rest. FV: do not chase very long holds, better ways to train the core.",
+          "agreement": "conflict",
+          "source_ids": [
+            "IH",
+            "MS",
+            "SH",
+            "SP",
+            "FV"
+          ],
+          "numeric": {
+            "value": "60",
+            "unit": "seconds",
+            "note": "IH/SH goal; SP caps ~120 s"
+          },
+          "per_source": {
+            "IH": "~60 s goal",
+            "MS": "as long as form holds; 30 s start; 3x60 s",
+            "SH": "~1 minute",
+            "SP": "20-30 s x 3-4 sets for beginners, cap ~2 min",
+            "FV": "avoid very long holds"
+          }
+        },
+        {
+          "id": "pl_09",
+          "phase": "hold",
+          "body_part": "back",
+          "parameter": "pain_rule",
+          "expected": "Low-back pain during a plank signals bad form, weak abs or poor stability: stop the hold. Shoulder 'burn' is normal (MS).",
+          "agreement": "consensus",
+          "source_ids": [
+            "IH",
+            "DN",
+            "MS"
+          ],
+          "numeric": null
+        }
+      ],
+      "breathing": [
+        {
+          "text": "Never hold your breath; slow steady breathing.",
+          "source_ids": [
+            "IH",
+            "FV",
+            "DN"
+          ]
+        }
+      ],
+      "breathing_agreement": "consensus",
+      "common_errors": [
+        {
+          "error": "Hips sagging",
+          "correct_instead": "Squeeze glutes, brace abs",
+          "source_ids": [
+            "FV",
+            "TG",
+            "SP"
+          ]
+        },
+        {
+          "error": "Butt lifted / piked",
+          "correct_instead": "Lower hips into the straight line",
+          "source_ids": [
+            "FV",
+            "MS"
+          ]
+        },
+        {
+          "error": "Dropping the head",
+          "correct_instead": "Keep neck in line with the spine",
+          "source_ids": [
+            "OL"
+          ]
+        },
+        {
+          "error": "Elbows too far forward",
+          "correct_instead": "Elbows directly under the shoulders",
+          "source_ids": [
+            "TG",
+            "OL"
+          ]
+        },
+        {
+          "error": "Looking up or forward",
+          "correct_instead": "Gaze to the floor",
+          "source_ids": [
+            "TG",
+            "SH",
+            "MS"
+          ]
+        },
+        {
+          "error": "Holding the breath",
+          "correct_instead": "Breathe steadily",
+          "source_ids": [
+            "IH",
+            "FV"
+          ]
+        },
+        {
+          "error": "Holding on through pain",
+          "correct_instead": "Stop when form breaks",
+          "source_ids": [
+            "IH",
+            "DN"
+          ]
+        }
+      ],
+      "load_and_reps": [
+        {
+          "text": "See pl_08 for conflicting duration guidance.",
+          "source_ids": [
+            "IH",
+            "MS",
+            "SH",
+            "SP",
+            "FV"
+          ]
+        }
+      ],
+      "variations_named_by_sources": [
+        "knee plank",
+        "incline plank",
+        "high plank (hands)",
+        "side plank",
+        "weighted plank",
+        "unstable-surface plank",
+        "plank jacks",
+        "shoulder taps",
+        "leg lifts"
+      ],
+      "safety": [],
+      "not_specified_by_sources": [
+        "Resolution of the duration disagreement"
+      ]
+    }
+  ]
+}
