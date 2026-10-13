@@ -1,12 +1,19 @@
 import { supabase } from "../supabase";
-import type { Rep } from "../exercises/squat/reps";
+
 import type { Calibration } from "../exercises/squat/calibration";
-import type { SquatThresholds } from "../exercises/squat/config";
 import { RULE_SET, type CameraView } from "../exercises/squat/config";
 
 /** A workout recorded in the browser, before it's saved. Video is never part of it. */
+/** What every exercise engine reports per rep (the squat coach and the generic catalog coach). */
+export interface RepLike {
+  n: number; start: number; end: number; downTime: number; upTime: number;
+  metrics: object; issues: string[]; trackingOk: boolean; trackingProblems: string[];
+  frames: { t: number; lm: number[][]; world?: number[][] }[];
+}
+
 export interface WorkoutRecord {
-  exercise: "squat";
+  /** "squat" (bodyweight squat coach) or a catalog exercise id. */
+  exercise: string;
   view: CameraView;
   /** "live" = phone camera in the app; "video_import" = a video file analyzed on the device (never uploaded). */
   source: "live" | "video_import";
@@ -18,15 +25,16 @@ export interface WorkoutRecord {
   frameWidth: number;
   frameHeight: number;
   device: string;
-  thresholds: SquatThresholds;
+  /** Limits in force for this session (squat thresholds, or check code → limit for catalog exercises). */
+  thresholds: object;
   calibrations: { t: number; cal: Calibration }[];
-  reps: Rep[];
+  reps: RepLike[];
 }
 
 /** The user's own judgment of a rep. */
 export interface RepLabel { correct: boolean; errors: string[]; note?: string }
 
-export const APP_VERSION = "0.4.0";
+export const APP_VERSION = "0.5.0";
 
 export async function currentUserId(): Promise<string> {
   const { data } = await supabase.auth.getSession();
@@ -52,7 +60,7 @@ export async function saveWorkout(w: WorkoutRecord, labels: Map<number, RepLabel
   const session = check(await supabase.from("sessions").insert({
     user_id: userId,
     exercise_id: w.exercise,
-    rule_set_id: w.view === RULE_SET.view ? await ruleSetId() : null,
+    rule_set_id: w.exercise === RULE_SET.exercise && w.view === RULE_SET.view ? await ruleSetId() : null,
     camera_view: w.view,
     started_at: w.startedAt,
     ended_at: w.endedAt,
@@ -112,8 +120,8 @@ export async function listSessions(): Promise<SessionSummary[]> {
 export interface SessionDetail {
   id: string; started_at: string; ended_at: string | null; exercise_id: string; camera_view: string; pose_model: string | null;
   source: string; source_meta: Record<string, unknown> | null;
-  thresholds: SquatThresholds | null;
-  reps: { id: string; n: number; down_time_s: number; up_time_s: number; metrics: Rep["metrics"]; issues: string[]; tracking_ok: boolean;
+  thresholds: Record<string, unknown> | null;
+  reps: { id: string; n: number; down_time_s: number; up_time_s: number; metrics: Record<string, any>; issues: string[]; tracking_ok: boolean;
     rep_labels: { correct: boolean; error_codes: string[]; labeler_id: string; labeler_role: string; note: string | null }[] }[];
 }
 

@@ -58,7 +58,7 @@ do $$ begin
   assert (select count(*) from public.rep_keypoints) = 0, 'B sees A keypoints';
   assert (select count(*) from public.rep_labels) = 0, 'B sees A labels';
   assert (select count(*) from public.profiles) = 1, 'B sees other profiles';
-  assert (select count(*) from public.exercises) = 3, 'B reads catalog';
+  assert (select count(*) from public.exercises) = 13, 'B reads catalog';
 end $$;
 
 -- As coach: nothing until A consents

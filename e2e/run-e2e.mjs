@@ -154,7 +154,7 @@ try {
   await page.goto(base + "#/");
   await page.click("text=Import a video");
   await page.setInputFiles('input[type="file"]', videoFile);
-  await page.selectOption("select >> nth=1", "coach");
+  await page.locator("label", { hasText: "Where the video comes from" }).locator("select").selectOption("coach");
   await page.fill('input[placeholder^="e.g. Coach A, permission"]', "Coach A, permission by email");
   await page.locator(".check").last().locator("input").check();
   await page.screenshot({ path: path.join(ROOT, "test-results", "import-form.png"), fullPage: true });
@@ -198,6 +198,58 @@ try {
 } catch (e) {
   check(false, `flow crashed: ${e.message}`);
   await page.screenshot({ path: path.join(ROOT, "test-results", "failure.png"), fullPage: true }).catch(() => {});
+}
+
+// ---- a catalog exercise (barbell curl), live: scripted stick-figure reps from the unit-test fixtures
+try {
+  const gen = await build({ stdin: { contents: `export { planarPose, blend } from "./src/exercises/generic/planar"; export { FIXTURES } from "./src/exercises/generic/fixtures";`, resolveDir: ROOT, loader: "ts" }, bundle: true, write: false, format: "iife", globalName: "Gen" });
+  const curlModel = `${gen.outputFiles[0].text}
+  (() => {
+    const fx = Gen.FIXTURES.barbell_curl, swing = fx.faults.find(f => f.code === "torso_swing").peak;
+    const keys = [[fx.rest, 1.5], [fx.peak, 1.5], [fx.rest, 1.5], [fx.rest, 1], [swing, 1.5], [fx.rest, 1.5], [fx.rest, 1]];
+    let t0 = null;
+    window.__FAKE_LANDMARKER__ = { detectForVideo(_v, ts) {
+      if (t0 === null) t0 = ts;
+      let t = (ts - t0) / 1000, prev = keys[0][0], spec = fx.rest;
+      window.__SCRIPT_DONE__ = true;
+      for (const [k, d] of keys) { if (t < d) { spec = Gen.blend(prev, k, t / d); window.__SCRIPT_DONE__ = false; break; } t -= d; prev = k; }
+      const p = Gen.planarPose(spec);
+      // The fixtures assume square pixels; the fake camera is 4:3, so squeeze x to keep the angles.
+      return { landmarks: [p.map(q => ({ x: 0.5 + (q.x - 0.5) * 0.75, y: q.y, z: 0, visibility: q.v }))], worldLandmarks: [] };
+    }, close() {} };
+  })();`;
+  const ctx2 = await browser.newContext({ viewport: { width: 412, height: 915 } });
+  const p2 = await ctx2.newPage();
+  p2.on("pageerror", e => errors.push(String(e)));
+  await p2.route(SUPABASE, fakeSupabase);
+  await p2.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, body: "" }));
+  await p2.addInitScript(curlModel);
+  await p2.goto(base);
+  await p2.fill('input[name="email"]', USER.email);
+  await p2.fill('input[name="password"]', "correct-horse");
+  await p2.click('button[type="submit"]');
+  await p2.waitForSelector(".exercise-list");
+  check(await p2.locator(".exercise-row").count() === 10, "home lists the 10 catalog exercises");
+  await p2.locator(".exercise-row", { hasText: "Barbell curl" }).getByRole("link", { name: "Start" }).click();
+  await p2.click("text=Start camera");
+  await p2.waitForFunction(() => window.__SCRIPT_DONE__, null, { timeout: 60000 });
+  check(await p2.textContent(".reps b") === "2", "curl: 2 reps counted");
+  await p2.click("text=Finish & review");
+  await p2.waitForURL(/#\/summary$/);
+  const heads = await p2.locator(".rep-head").allTextContents();
+  check(heads.length === 2 && /Clean/.test(heads[0]) && /Swinging the torso/.test(heads[1]), `curl review: ${JSON.stringify(heads)}`);
+  await p2.locator(".rep-card").nth(1).getByRole("button", { name: "Swinging the torso" }).click();
+  await p2.click("text=Save to my account");
+  await p2.waitForURL(/#\/session\//);
+  const cs = db.sessions.find(x => x.exercise_id === "barbell_curl");
+  check(cs && cs.camera_view === "side" && cs.rule_set_id === null && cs.thresholds?.torso_swing?.max === 8, "curl session saved with exercise, view and limits");
+  const cr = db.reps.filter(r => r.session_id === cs?.id);
+  check(cr.length === 2 && cr[1].issues[0] === "torso_swing" && typeof cr[1].metrics.torso_swing === "number", "curl reps saved with issues and measured values");
+  await p2.waitForSelector("text=Labeled");
+  await p2.screenshot({ path: path.join(ROOT, "test-results", "curl-session.png"), fullPage: true });
+  await ctx2.close();
+} catch (e) {
+  check(false, `catalog flow crashed: ${e.message}`);
 }
 
 check(errors.length === 0, `no console errors${errors.length ? ": " + errors.join(" | ") : ""}`);

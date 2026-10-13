@@ -4,7 +4,7 @@ A camera-based workout coach: it tracks your body in real time, shows a transluc
 
 **App:** https://farhangkhanjani.github.io/ai-form-coach/ — open it on your phone and use "Add to Home screen" to install it like an app.
 
-Current stage: squat with the live front camera, plus importing squat videos (front, side or diagonal) to label reps; sign-up/sign-in (email or Google); sessions, reps, keypoints and labels saved to Supabase.
+Current stage: bodyweight squat (front camera, ghost) plus 10 lifts from the technique dataset (back squat, bench press, deadlift, pull-up, row, overhead press, curl, dip, lunge, plank), live or from imported videos, with per-rep labels; sign-up/sign-in (email or Google); sessions, reps, keypoints and labels saved to Supabase.
 
 ## Docs
 
@@ -20,6 +20,8 @@ Current stage: squat with the live front camera, plus importing squat videos (fr
 
 | Path | What |
 |---|---|
+| `src/exercises/generic/` | Engine for the 10 dataset exercises: features, rep/hold detection, catalog of checks with dataset sources, test fixtures |
+| `docs/research/` | The technique dataset the catalog is built from |
 | `src/exercises/squat/` | Squat coach without any UI: calibration, frame metrics, rep detection and scoring, ghost drawing, thresholds (`config.ts`) |
 | `src/pose/` | MediaPipe Pose loader, landmark types, 3D joint angles |
 | `scripts/fetch-assets.mjs` | Puts the MediaPipe runtime and pose models (pinned SHA-256) into `public/mediapipe/`, so the app serves them itself; runs before `dev` and `build` |

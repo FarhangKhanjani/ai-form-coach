@@ -4,9 +4,20 @@ One file per exercise. Each file is the single reference for what "correct" mean
 
 | Exercise | File | Status |
 |---|---|---|
-| Bodyweight / goblet squat | [squat.md](squat.md) | Draft v0, not coach-reviewed |
-| Lunge | — | Not started |
+| Bodyweight / goblet squat (front view, ghost) | [squat.md](squat.md) | Draft v0.1, not coach-reviewed |
+| Barbell back squat | [back_squat.md](back_squat.md) | Generated v0, not coach-reviewed |
+| Barbell bench press | [bench_press.md](bench_press.md) | Generated v0, not coach-reviewed |
+| Conventional deadlift | [conventional_deadlift.md](conventional_deadlift.md) | Generated v0, not coach-reviewed |
+| Pull-up | [pull_up.md](pull_up.md) | Generated v0, not coach-reviewed |
+| Barbell bent-over row | [barbell_bent_over_row.md](barbell_bent_over_row.md) | Generated v0, not coach-reviewed |
+| Overhead press | [overhead_press.md](overhead_press.md) | Generated v0, not coach-reviewed |
+| Barbell curl | [barbell_curl.md](barbell_curl.md) | Generated v0, not coach-reviewed |
+| Parallel-bar dip | [parallel_bar_dip.md](parallel_bar_dip.md) | Generated v0, not coach-reviewed |
+| Forward lunge | [forward_lunge.md](forward_lunge.md) | Generated v0, not coach-reviewed |
+| Forearm plank | [forearm_plank.md](forearm_plank.md) | Generated v0, not coach-reviewed |
 | Standing dumbbell press | — | Not started |
+
+The ten "Generated" files come from `docs/research/exercise_technique_dataset.json` (web coaching sources, 3+ per exercise, with agreement recorded per checkpoint) and the app's checks in `src/exercises/generic/catalog.ts`. Regenerate with `npx vite-node scripts/gen-exercise-docs.ts`; don't edit them by hand.
 
 ## Rules for these documents
 

@@ -3,10 +3,11 @@ import type { Pose, WorldPose } from "../pose/types";
 import { SquatCoach } from "../exercises/squat/coach";
 import { DEFAULTS, type CameraView } from "../exercises/squat/config";
 import { drawUser } from "../exercises/squat/draw";
-import type { Rep } from "../exercises/squat/reps";
-import { saveWorkout, type RepLabel, type WorkoutRecord } from "../data/api";
+import { CATALOG, byId } from "../exercises/generic/catalog";
+import { GenericCoach } from "../exercises/generic/engine";
+import { saveWorkout, type RepLabel, type RepLike, type WorkoutRecord } from "../data/api";
 import { h, mount, topbar, download, errorText } from "./dom";
-import { anglesText, issuesText, labelEditor } from "./labels";
+import { issuesText, labelEditor, repDetails } from "./labels";
 
 const FPS = 30;                 // frames analyzed per second of video, same as the live camera
 const CONSENT_TEXT_VERSION = 1; // bump when the consent wording below changes
@@ -18,16 +19,30 @@ const ORIGINS = {
   other: "Other, with permission from the person filmed"
 } as const;
 
+const VIEW_NAMES: Record<CameraView, string> = { front: "Front", side: "Side", diagonal: "Diagonal (45°)" };
+const viewsOf = (exercise: string): CameraView[] => byId(exercise)?.views ?? ["front", "side", "diagonal"];
+
 /**
- * Analyze a squat video on this device, label each rep, save keypoints and labels.
+ * Analyze an exercise video on this device, label each rep, save keypoints and labels.
  * The video never leaves the phone or computer (project rule: video stays on the device).
  */
-export function importVideoPage(): () => void {
+export function importVideoPage(initialExercise = "squat"): () => void {
   let cancelled = false;
   let objectUrl: string | null = null;
 
   const file = h("input", { type: "file", accept: "video/*", required: true });
-  const view = h("select", {}, h("option", { value: "front" }, "Front"), h("option", { value: "side" }, "Side"), h("option", { value: "diagonal" }, "Diagonal (45°)"));
+  const exercise = h("select", {}, h("option", { value: "squat" }, "Bodyweight / goblet squat"), ...CATALOG.map(d => h("option", { value: d.id }, d.name)));
+  exercise.value = byId(initialExercise) || initialExercise === "squat" ? initialExercise : "squat";
+  const view = h("select");
+  const filming = h("p", { class: "note" });
+  const syncViews = () => {
+    const def = byId(exercise.value);
+    view.replaceChildren(...viewsOf(exercise.value).map(v => h("option", { value: v }, VIEW_NAMES[v])));
+    view.value = def?.defaultView ?? "front";
+    filming.textContent = def ? `How to film: ${def.filming}` : "How to film: front view, 2–3 m away, whole body in frame (docs/data-collection.md).";
+  };
+  exercise.addEventListener("change", syncViews);
+  syncViews();
   const origin = h("select", {}, ...Object.entries(ORIGINS).map(([v, t]) => h("option", { value: v }, t)));
   const originDetail = h("input", { type: "text", placeholder: "e.g. Coach A, permission by email 13 Oct · or dataset name + license" });
   const person = h("input", { type: "text", placeholder: "e.g. Coach A, Subject 3 (no full names needed)" });
@@ -38,8 +53,9 @@ export function importVideoPage(): () => void {
   const go = h("button", { class: "btn", type: "submit" }, "Analyze video");
 
   const form = h("form", { class: "auth-form" },
+    h("label", { class: "field" }, "Exercise", exercise),
     h("label", { class: "field" }, "Video file", file),
-    h("label", { class: "field" }, "Camera view", view),
+    h("label", { class: "field" }, "Camera view", view), filming,
     h("label", { class: "field" }, "Where the video comes from", origin),
     h("label", { class: "field" }, "Details (who gave permission, or dataset and license)", originDetail),
     h("label", { class: "field" }, "Person in the video (optional)", person),
@@ -52,7 +68,7 @@ export function importVideoPage(): () => void {
   mount(
     topbar("Import video", h("a", { href: "#/", class: "btn quiet small" }, "Exit")),
     h("main", { class: "page", id: "import-main" },
-      h("p", { class: "note" }, "Analyze a squat video with the same pose model and rep detection as the live camera, then label each rep. Use only videos you have permission for (see docs/datasets.md)."),
+      h("p", { class: "note" }, "Analyze an exercise video with the same pose model and rep detection as the live camera, then label each rep. Use only videos you have permission for (see docs/datasets.md)."),
       form));
 
   form.addEventListener("submit", async e => {
@@ -63,7 +79,7 @@ export function importVideoPage(): () => void {
     go.disabled = true; status.textContent = "";
     try {
       await analyze(f, {
-        view: view.value as CameraView, model: model.value as ModelName,
+        exercise: exercise.value, view: view.value as CameraView, model: model.value as ModelName,
         sourceMeta: {
           fileName: f.name, origin: origin.value, originDetail: originDetail.value || null, person: person.value || null,
           coachConfirmedCorrect: coachCorrect.checked, consentConfirmed: true, consentTextVersion: CONSENT_TEXT_VERSION
@@ -75,7 +91,7 @@ export function importVideoPage(): () => void {
     }
   });
 
-  async function analyze(f: File, opt: { view: CameraView; model: ModelName; sourceMeta: Record<string, unknown> }) {
+  async function analyze(f: File, opt: { exercise: string; view: CameraView; model: ModelName; sourceMeta: Record<string, unknown> }) {
     objectUrl = URL.createObjectURL(f);
     const video = h("video", { muted: true, playsinline: true, preload: "auto", class: "import-video" });
     video.src = objectUrl;
@@ -97,8 +113,9 @@ export function importVideoPage(): () => void {
 
     resetImportLandmarker();
     const lm = await getLandmarker(opt.model, "import");
-    const coach = new SquatCoach({ ...DEFAULTS }, W / H, opt.view);
-    const reps: Rep[] = [];
+    const def = byId(opt.exercise);
+    const coach = def ? new GenericCoach(def, W / H, opt.view) : new SquatCoach({ ...DEFAULTS }, W / H, opt.view);
+    const reps: RepLike[] = [];
     const calibrations: WorkoutRecord["calibrations"] = [];
     let lastMessage: string | null = null;
     const frames = Math.floor(duration * FPS);
@@ -115,24 +132,24 @@ export function importVideoPage(): () => void {
       }
       const st = coach.step(t, pose, world);
       if (st.phase === "calibrating" && st.message) lastMessage = st.message;
-      if (st.phase === "tracking" && st.event === "calibrated") calibrations.push({ t, cal: st.cal });
+      if (st.phase === "tracking" && "cal" in st && st.event === "calibrated") calibrations.push({ t, cal: st.cal });
       if (st.phase === "tracking" && st.event && typeof st.event === "object") reps.push(st.event);
       if (i % 5 === 0) {
         ctx.clearRect(0, 0, W, H);
-        if (st.phase !== "no-person") drawUser(ctx, st.pose, st.phase === "tracking" ? st.flags ?? {} : {});
+        if (st.phase !== "no-person") drawUser(ctx, st.pose, st.phase === "tracking" && "flags" in st ? st.flags ?? {} : {});
         bar.style.width = Math.round(100 * i / frames) + "%";
         progress.textContent = `Analyzing ${t.toFixed(1)} s of ${duration.toFixed(1)} s · ${reps.length} reps so far`;
       }
     }
 
     const record: WorkoutRecord = {
-      exercise: "squat", view: opt.view, source: "video_import",
+      exercise: opt.exercise, view: opt.view, source: "video_import",
       sourceMeta: { ...opt.sourceMeta, durationS: Math.round(duration * 10) / 10, fpsAnalyzed: FPS },
       startedAt: new Date().toISOString(), endedAt: new Date().toISOString(),
       poseModel: poseModelId(opt.model), frameWidth: W, frameHeight: H, device: "video-import",
-      thresholds: { ...DEFAULTS }, calibrations, reps
+      thresholds: def ? Object.fromEntries(def.checks.map(c => [c.code, c.limit])) : { ...DEFAULTS }, calibrations, reps
     };
-    review(video, record, !calibrations.length ? lastMessage : null);
+    review(video, record, !def && !calibrations.length ? lastMessage : null);
   }
 
   function review(video: HTMLVideoElement, w: WorkoutRecord, calibrationProblem: string | null) {
@@ -143,21 +160,20 @@ export function importVideoPage(): () => void {
     const saveBtn = h("button", { class: "btn" }, "Save to my account");
     let stopAt = Infinity;
     video.addEventListener("timeupdate", () => { if (video.currentTime >= stopAt) { video.pause(); stopAt = Infinity; } });
-    const playRep = (r: Rep) => { video.currentTime = Math.max(0, r.start - 0.3); stopAt = r.end + 0.3; video.play().catch(() => {}); };
+    const playRep = (r: RepLike) => { video.currentTime = Math.max(0, r.start - 0.3); stopAt = r.end + 0.3; video.play().catch(() => {}); };
 
     const coachCorrect = w.sourceMeta?.coachConfirmedCorrect === true;
     const cards = w.reps.map(r => {
       const note = h("textarea", { rows: 2, placeholder: "Why? (optional)", class: "note-input" });
       note.addEventListener("input", () => notes.set(r.n, note.value));
       const editor = labelEditor(coachCorrect && r.trackingOk ? { correct: true, errors: [] } : null,
-        l => { if (l) labels.set(r.n, l); else labels.delete(r.n); }, false);
+        l => { if (l) labels.set(r.n, l); else labels.delete(r.n); }, false, w.exercise);
       if (coachCorrect && r.trackingOk) labels.set(r.n, { correct: true, errors: [] });
       return h("div", { class: "rep-card" + (r.trackingOk ? "" : " dim") },
         h("div", { class: "rep-head" },
           h("b", {}, `Rep ${r.n}`), h("span", { class: "muted small" }, `${r.start.toFixed(1)}–${r.end.toFixed(1)} s`),
-          r.trackingOk ? issuesText(r.issues) : h("span", { class: "muted" }, "Tracking unreliable: " + r.trackingProblems.join(", "))),
-        h("p", { class: "rep-metrics" }, `Depth ${r.metrics.depthPct}% · down ${r.downTime.toFixed(1)} s` + (w.view === "front" ? ` · knees ${Number(r.metrics.kneeRatio).toFixed(2)}×` : "")),
-        anglesText(r.metrics.anglesAtBottom),
+          r.trackingOk ? issuesText(r.issues, w.exercise) : h("span", { class: "muted" }, "Tracking unreliable: " + r.trackingProblems.join(", "))),
+        ...repDetails(w.exercise, r.metrics as Record<string, unknown>, r.downTime, w.view),
         h("button", { class: "btn quiet small", type: "button", onclick: () => playRep(r) }, "▶ Play this rep"),
         editor, note);
     });
@@ -181,13 +197,13 @@ export function importVideoPage(): () => void {
       calibrationProblem
         ? h("p", { class: "error" }, `No reps found: the person never stood still long enough to calibrate. Last message: "${calibrationProblem}"`)
         : h("p", { class: "muted" }, `${w.reps.length} reps found, ${scored.length} with reliable tracking.` +
-            (w.view !== "front" ? ` ${w.view === "side" ? "Side" : "Diagonal"} view: only depth${w.view === "side" ? ", heels" : ""} and tempo are checked.` : "")),
+            (w.exercise === "squat" && w.view !== "front" ? ` ${w.view === "side" ? "Side" : "Diagonal"} view: only depth${w.view === "side" ? ", heels" : ""} and tempo are checked.` : "")),
       h("p", { class: "note" }, coachCorrect
         ? "Marked as coach-confirmed correct: every reliable rep starts labeled \"Correct\". Change any that aren't."
         : "Play each rep and label what really happened. Add why if it isn't obvious."),
       h("div", { class: "rep-cards" }, ...cards),
       h("div", { class: "actions sticky" }, saveBtn,
-        h("button", { class: "btn quiet", onclick: () => download(`squat-import-${Date.now()}.json`, {
+        h("button", { class: "btn quiet", onclick: () => download(`${w.exercise}-import-${Date.now()}.json`, {
           app: "ai-form-coach", version: 2, exportedAt: new Date().toISOString(), ...w,
           reps: w.reps.map(r => ({ ...r, label: labels.get(r.n) ?? null, note: notes.get(r.n) ?? null }))
         }) }, "Download JSON")),

@@ -6,6 +6,7 @@ import { workoutPage } from "./ui/workout";
 import { summaryPage } from "./ui/summary";
 import { profilePage } from "./ui/profile";
 import { importVideoPage } from "./ui/importVideo";
+import { exerciseWorkoutPage } from "./ui/exerciseWorkout";
 
 let cleanup: (() => void) | void = undefined;
 let recovering = false;
@@ -26,7 +27,8 @@ async function route() {
   if (!signedIn) { location.hash = "#/login"; return; }
 
   if (hash === "#/workout/squat") cleanup = workoutPage();
-  else if (hash === "#/import/squat") cleanup = importVideoPage();
+  else if (hash.startsWith("#/workout/")) cleanup = exerciseWorkoutPage(hash.slice("#/workout/".length));
+  else if (hash.startsWith("#/import/")) cleanup = importVideoPage(hash.slice("#/import/".length));
   else if (hash === "#/summary") summaryPage();
   else if (hash === "#/profile") await profilePage();
   else if (hash.startsWith("#/session/")) await sessionPage(hash.slice("#/session/".length));

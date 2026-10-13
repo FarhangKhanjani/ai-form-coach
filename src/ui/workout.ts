@@ -7,6 +7,7 @@ import { DEFAULTS, ERROR_TEXT, type SquatThresholds } from "../exercises/squat/c
 import { drawGhost, drawUser, tempoPhase } from "../exercises/squat/draw";
 import type { Rep } from "../exercises/squat/reps";
 import type { WorkoutRecord } from "../data/api";
+import { setPendingWorkout } from "./pending";
 import { h, mount, topbar } from "./dom";
 
 const TH_KEY = "formcoach.squat.thresholds.v2";
@@ -18,9 +19,6 @@ function load<T>(key: string, fallback: T): T {
 }
 function save(key: string, v: unknown) { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* ignore */ } }
 
-/** The finished workout waiting on the review screen. */
-export let pendingWorkout: WorkoutRecord | null = null;
-export function clearPendingWorkout() { pendingWorkout = null; }
 
 function speak(on: boolean, text: string) {
   if (!on || !("speechSynthesis" in window)) return;
@@ -249,7 +247,7 @@ export function workoutPage(): () => void {
   recalBtn.addEventListener("click", () => { if (coach) { coach.recalibrate(); calib.hidden = false; calibBar.style.width = "0%"; setCue(null); } });
   finishBtn.addEventListener("click", () => {
     stopCamera();
-    pendingWorkout = {
+    setPendingWorkout({
       exercise: "squat", view: "front", source: "live",
       startedAt, endedAt: new Date().toISOString(),
       poseModel: poseModelId(modelName),
@@ -257,7 +255,7 @@ export function workoutPage(): () => void {
       device: /android/i.test(navigator.userAgent) ? "android" : /iphone|ipad/i.test(navigator.userAgent) ? "ios" : "desktop",
       thresholds: { ...th },
       calibrations, reps
-    };
+    });
     location.hash = "#/summary";
   });
 

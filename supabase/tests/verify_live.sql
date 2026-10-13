@@ -16,12 +16,13 @@ with checks(item, expected, actual) as (
   ('users cannot change their role', 0, (select count(*) from information_schema.column_privileges
       where table_schema = 'public' and table_name = 'profiles' and column_name = 'role'
       and grantee = 'authenticated' and privilege_type = 'UPDATE')),
-  ('exercises seeded', 3, (select count(*) from public.exercises)),
+  ('exercises seeded (3 + 10 from migration 4)', 13, (select count(*) from public.exercises)),
   ('squat error types seeded', 7, (select count(*) from public.exercise_errors where exercise_id = 'squat')),
   ('squat rule sets (front v1, side v1, front v2)', 3, (select count(*) from public.rule_sets where exercise_id = 'squat')),
   ('sessions.thresholds column', 1, (select count(*) from information_schema.columns
       where table_schema = 'public' and table_name = 'sessions' and column_name = 'thresholds')),
   ('sessions.source and source_meta columns (migration 3)', 2, (select count(*) from information_schema.columns
-      where table_schema = 'public' and table_name = 'sessions' and column_name in ('source', 'source_meta')))
+      where table_schema = 'public' and table_name = 'sessions' and column_name in ('source', 'source_meta'))),
+  ('catalog error types (migration 4)', 39, (select count(*) from public.exercise_errors where exercise_id <> 'squat'))
 )
 select item, expected, actual, expected = actual as ok from checks;

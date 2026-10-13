@@ -1,6 +1,7 @@
 import { listSessions, getProfile, getSession, setLabel, deleteSession, exportSession, type SessionDetail } from "../data/api";
 import { h, mount, topbar, fmtDate, download, errorText } from "./dom";
-import { anglesText, labelEditor, issuesText } from "./labels";
+import { labelEditor, issuesText, repDetails } from "./labels";
+import { CATALOG, byId } from "../exercises/generic/catalog";
 
 export async function homePage() {
   const list = h("div", { class: "list" }, h("p", { class: "muted" }, "Loading…"));
@@ -11,13 +12,18 @@ export async function homePage() {
       hello,
       h("a", { class: "start-card", href: "#/workout/squat" },
         h("span", { class: "start-title" }, "Squat"),
-        h("span", { class: "start-sub" }, "Bodyweight or goblet · front camera"),
+        h("span", { class: "start-sub" }, "Bodyweight or goblet · front camera · with ghost"),
         h("span", { class: "start-go" }, "Start →")),
+      h("h2", {}, "All exercises"),
+      h("div", { class: "exercise-list" }, ...CATALOG.map(d => h("div", { class: "exercise-row" },
+        h("div", {}, h("b", {}, d.short), h("span", { class: "muted small" }, ` · ${d.equipment} · ${d.defaultView} view`)),
+        h("div", { class: "exercise-actions" },
+          h("a", { class: "btn small", href: `#/workout/${d.id}` }, "Start"),
+          h("a", { class: "btn quiet small", href: `#/import/${d.id}` }, "Video"))))),
       h("a", { class: "start-card secondary", href: "#/import/squat" },
         h("span", { class: "start-title small-title" }, "Import a video"),
-        h("span", { class: "start-sub" }, "Analyze a squat video on this device and label each rep"),
+        h("span", { class: "start-sub" }, "Analyze any exercise video on this device and label each rep"),
         h("span", { class: "start-go" }, "Open →")),
-      h("p", { class: "muted small" }, "Lunge and dumbbell press come next."),
       h("h2", {}, "Your sessions"),
       list));
 
@@ -29,7 +35,7 @@ export async function homePage() {
       const scored = s.reps.filter(r => r.tracking_ok);
       const clean = scored.filter(r => !r.issues.length).length;
       return h("a", { class: "row-link", href: `#/session/${s.id}` },
-        h("span", {}, h("b", {}, s.exercise_id === "squat" ? "Squat" : s.exercise_id), " · ", fmtDate(s.started_at),
+        h("span", {}, h("b", {}, byId(s.exercise_id)?.short ?? "Squat"), " · ", fmtDate(s.started_at),
           s.source === "video_import" ? h("span", { class: "tag" }, `video · ${s.camera_view}`) : null),
         h("span", { class: "muted" }, `${scored.length} reps · ${clean} clean`));
     }));
@@ -55,15 +61,13 @@ export async function sessionPage(id: string) {
     h("div", { class: "rep-cards" }, ...s.reps.map(r => h("div", { class: "rep-card" + (r.tracking_ok ? "" : " dim") },
       h("div", { class: "rep-head" },
         h("b", {}, `Rep ${r.n}`),
-        r.tracking_ok ? issuesText(r.issues) : h("span", { class: "muted" }, "Tracking unreliable, not scored")),
-      h("p", { class: "rep-metrics" },
-        `Depth ${r.metrics.depthPct}% · knees ${Number(r.metrics.kneeRatio).toFixed(2)}× · down ${Number(r.down_time_s).toFixed(1)} s`),
-      anglesText(r.metrics.anglesAtBottom),
+        r.tracking_ok ? issuesText(r.issues, s.exercise_id) : h("span", { class: "muted" }, "Tracking unreliable, not scored")),
+      ...repDetails(s.exercise_id, r.metrics, Number(r.down_time_s), s.camera_view),
       labelEditor(r.rep_labels[0] ? { correct: r.rep_labels[0].correct, errors: r.rep_labels[0].error_codes } : null,
-        l => l ? setLabel(r.id, { ...l, note: r.rep_labels[0]?.note ?? undefined }) : undefined),
+        l => l ? setLabel(r.id, { ...l, note: r.rep_labels[0]?.note ?? undefined }) : undefined, true, s.exercise_id),
       r.rep_labels[0]?.note ? h("p", { class: "rep-metrics" }, `Why: ${r.rep_labels[0].note}`) : null))),
     h("div", { class: "actions" },
-      h("button", { class: "btn quiet", onclick: async () => download(`squat-session-${s.started_at.slice(0, 16).replace(/[:T]/g, "")}.json`, await exportSession(s.id)) }, "Download JSON"),
+      h("button", { class: "btn quiet", onclick: async () => download(`${s.exercise_id}-session-${s.started_at.slice(0, 16).replace(/[:T]/g, "")}.json`, await exportSession(s.id)) }, "Download JSON"),
       h("button", { class: "btn quiet danger", onclick: async () => {
         if (!confirm("Delete this session and all its reps?")) return;
         await deleteSession(s.id); location.hash = "#/";

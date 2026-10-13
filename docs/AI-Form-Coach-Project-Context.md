@@ -51,8 +51,9 @@ When you work on this project:
 | D11 | Rule thresholds live in `docs/exercises/<exercise>.md` with a source or a [Placeholder] tag for every number, and as versioned `rule_sets` rows | Keeps "what is correct" traceable; old sessions keep the rules they were scored with |
 | D12 | MediaPipe runtime and models are served by the app itself (`scripts/fetch-assets.mjs`, models pinned by SHA-256) | No runtime dependency on jsDelivr/Google; the phone never contacts Google; model can't change under us. Same tracking speed |
 | D13 | Our own labeled dataset is built with the in-app **Import video** screen (videos analyzed on the device, never uploaded; origin and consent stored per session) and live sessions; no scraped online video | No public dataset fits (docs/datasets.md); same pose model and rep logic as live, so numbers are comparable |
+| D14 | Ten exercises from the founders' technique dataset (`docs/research/`) are added through one generic engine (rep signal + checks per exercise, side view by default); this includes the bench press, previously rejected, now added at the founders' request with spoken cues because the screen isn't visible lying down | Covers the main gym lifts quickly; each check cites a dataset checkpoint; limits stay placeholders until coach review |
 
-Rejected for the first version: machine exercises (low value, frame occludes joints, gym-only), bench press (user can't see the screen while lying down, bar path needs a second model).
+Rejected for the first version: machine exercises (low value, frame occludes joints, gym-only), bench press (user can't see the screen while lying down, bar path needs a second model). *(Bench press added in v0.5 at the founders' request, D14: side view, spoken cues, no bar-path check.)*
 
 ---
 
@@ -268,6 +269,7 @@ Landmark indices (MediaPipe): 0 nose, 11/12 shoulders, 13/14 elbows, 15/16 wrist
   - depth has a tolerance band (5% of the standing gap);
   - down time starts where the hips began to drop.
 - **Video import (v0.4):** `#/import/squat` analyzes a video file frame by frame (30 fps, seeking) with a separate pose-model instance, runs the same `SquatCoach` with the chosen camera view, then shows each rep with playback, labels and a "why" note. Saved with `sessions.source = 'video_import'` and `source_meta` (file name, origin, person, consent; migration 3 requires consent). Non-front views skip front-only checks (`CHECKS_BY_VIEW` in `config.ts`).
+- **Catalog exercises (v0.5):** back squat, bench press, deadlift, pull-up, bent-over row, overhead press, barbell curl, dip, forward lunge, forearm plank (`src/exercises/generic/`). One engine: 2D features from the side nearer the camera, a rep signal per exercise (joint angle with rest high/low and start/end/minimum thresholds), a 0.6 s after-window for lockout checks, hold mode for the plank. Each check cites dataset checkpoints; limits are [Placeholder] unless the dataset gives a number, editable per device in the workout screen. Live (`#/workout/<id>`) and video import (`#/import/<id>`). No ghost overlay for these yet. Docs per exercise are generated (`scripts/gen-exercise-docs.ts`).
 - **3D angles (v0.3):** knee/hip flexion, trunk and shin lean, trunk-minus-shin from world landmarks at the bottom of each rep (`src/pose/angles.ts`, stored in `reps.metrics.anglesAtBottom`). Shown, not scored yet.
 - **Data saved per session:** frame size, pose model, thresholds used, calibration history; per rep: timing, metrics, issues, 2D + world keypoints per frame, user labels. Schema: `supabase/migrations/`.
 - **Export format version 2** (JSON download): `{ app: "ai-form-coach", version: 2, ...workout, reps: [{ ...rep, label }] }`. Metric names changed from v1 (`shiftPct` is now % of hip width, not stance width), hence the new version; `analysis/analyze_session.py` reads v1.
@@ -278,7 +280,7 @@ Landmark indices (MediaPipe): 0 nose, 11/12 shoulders, 13/14 elbows, 15/16 wrist
 2. **Depth validation:** add a side-view mode (or a second-phone recording workflow) and compare front-view depth against side-view depth for the same reps.
 3. **Coach review session:** update the ghost bottom pose and thresholds; move thresholds into a versioned rules config (JSON) per exercise.
 4. *(Done in app v0.2 for the squat.)* **Refactor** into modules (pose service, calibration, per-exercise rule modules, ghost renderer, UI) so lunge and dumbbell press can be added cleanly.
-5. **Add lunge, then standing dumbbell press** using the rule spec in section 6.
+5. *(v0.5: forward lunge and nine more lifts added from the technique dataset; standing dumbbell press still open.)* **Add lunge, then standing dumbbell press** using the rule spec in section 6.
 6. **User test with 5–10 people at home:** do they look at the overlay and fix their form? Log every complaint about phone placement (evidence for or against hardware).
 7. **Data pipeline (Python):** load exported JSON sessions, compute per-rep features, train a small per-error classifier on keypoint sequences, compare against the rules on a coach-labeled held-out set.
 8. *(Supabase part done in v0.2: auth + tables + RLS.)* **Backend:** FastAPI + Supabase storing keypoints and session summaries; optional opt-in short clips in Cloudflare R2 for labeling. No video by default.

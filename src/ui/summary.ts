@@ -1,7 +1,8 @@
 import { saveWorkout, type RepLabel, type WorkoutRecord } from "../data/api";
 import { h, mount, topbar, download, errorText } from "./dom";
-import { anglesText, issuesText, labelEditor } from "./labels";
-import { pendingWorkout, clearPendingWorkout } from "./workout";
+import { issuesText, labelEditor, repDetails } from "./labels";
+import { byId } from "../exercises/generic/catalog";
+import { pendingWorkout, clearPendingWorkout } from "./pending";
 
 /** JSON export of an unsaved workout (format version 2). */
 function exportJson(w: WorkoutRecord, labels: Map<number, RepLabel>) {
@@ -20,7 +21,7 @@ export function summaryPage() {
   const scored = w.reps.filter(r => r.trackingOk);
   const status = h("p", { class: "form-status", role: "alert" });
   const saveBtn = h("button", { class: "btn" }, "Save to my account");
-  const fileName = `squat-session-${w.startedAt.slice(0, 16).replace(/[:T-]/g, "")}.json`;
+  const fileName = `${w.exercise}-session-${w.startedAt.slice(0, 16).replace(/[:T-]/g, "")}.json`;
 
   saveBtn.addEventListener("click", async () => {
     saveBtn.disabled = true; saveBtn.textContent = "Saving…"; status.textContent = "";
@@ -35,7 +36,7 @@ export function summaryPage() {
   });
 
   mount(
-    topbar("Review"),
+    topbar(`Review · ${byId(w.exercise)?.short ?? "Squat"}`),
     h("main", { class: "page" },
       h("div", { class: "stats" },
         h("div", {}, h("b", {}, scored.length), h("span", {}, "Reps")),
@@ -46,10 +47,9 @@ export function summaryPage() {
         : h("p", { class: "muted" }, "No reps were recorded."),
       h("div", { class: "rep-cards" }, ...w.reps.map(r => h("div", { class: "rep-card" + (r.trackingOk ? "" : " dim") },
         h("div", { class: "rep-head" }, h("b", {}, `Rep ${r.n}`),
-          r.trackingOk ? issuesText(r.issues) : h("span", { class: "muted" }, "Tracking unreliable: " + r.trackingProblems.join(", "))),
-        h("p", { class: "rep-metrics" }, `Depth ${r.metrics.depthPct}% · knees ${Number(r.metrics.kneeRatio).toFixed(2)}× · down ${r.downTime.toFixed(1)} s`),
-        anglesText(r.metrics.anglesAtBottom),
-        labelEditor(null, l => { if (l) labels.set(r.n, l); else labels.delete(r.n); }, false)))),
+          r.trackingOk ? issuesText(r.issues, w.exercise) : h("span", { class: "muted" }, "Tracking unreliable: " + r.trackingProblems.join(", "))),
+        ...repDetails(w.exercise, r.metrics as Record<string, unknown>, r.downTime, w.view),
+        labelEditor(null, l => { if (l) labels.set(r.n, l); else labels.delete(r.n); }, false, w.exercise)))),
       h("div", { class: "actions sticky" },
         saveBtn,
         h("button", { class: "btn quiet", onclick: () => download(fileName, exportJson(w, labels)) }, "Download JSON"),
