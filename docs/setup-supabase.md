@@ -12,6 +12,8 @@ Run every file in `supabase/migrations/`, in name order. Either:
 - **Dashboard:** SQL Editor → New query → paste the contents of one migration file → Run. Repeat for the next file.
 - **CLI:** `npx supabase login`, `npx supabase link --project-ref <ref>`, `npx supabase db push`.
 
+To confirm everything was created, run `supabase/tests/verify_live.sql` in the SQL Editor: every row should show `ok = true`.
+
 Then make yourself admin (SQL Editor, after you've signed up in the app once):
 
 ```sql
