@@ -7,6 +7,7 @@ import type { CameraView, ExerciseDef, RepSeries } from "./types";
 const AFTER_S = 0.6;     // frames kept after a rep for lockout checks
 const MAX_REP_S = 15;
 const MIN_FRAMES = 8;
+const MIN_REST_S = 0.3;  // a rep only starts after being at rest this long (no phantom rep while walking up or setting up)
 const r4 = (v: number) => Math.round(v * 10000) / 10000;
 const r1 = (v: number) => Math.round(v * 10) / 10;
 
@@ -39,6 +40,8 @@ export class GenericCoach {
   private restRef = NaN;   // signal value at rest (the extreme seen while resting)
   private restT = 0;       // last time the signal was at rest
   private lastRest: Features | null = null;
+  private restSince: number | null = null;
+  private lastRepEnd = -Infinity;   // touch-and-go: a rep right after the previous one needs no pause
   private count = 0;
   private outSince: number | null = null;   // hold mode: time the person left the position
 
@@ -99,6 +102,10 @@ export class GenericCoach {
 
     if (!this.active) {
       if (atRestSide(s)) { this.trackRest(t, s, f); return out; }
+      // Away from rest without having been at rest first (walking up, unracking, setting up): not a rep.
+      const rested = this.restSince !== null && (t - this.restSince >= MIN_REST_S || t - this.lastRepEnd < 3);
+      if (!rested) { this.restSince = null; this.restRef = NaN; return out; }
+      this.restSince = null;
       this.active = {
         start: t - this.restT < 3 ? this.restT : t, peak: s, peakIdx: 0,
         t: [], f: [], signal: [], frames: [], before: this.lastRest, after: [], endT: null, lowVis: 0
@@ -114,12 +121,13 @@ export class GenericCoach {
     if (high ? s < a.peak : s > a.peak) { a.peak = s; a.peakIdx = a.f.length - 1; }
     if (t - a.start > MAX_REP_S) { this.active = null; return out === "start" ? null : out; }
     const backToRest = high ? s > sig.exit : s < sig.exit;
-    if (backToRest) a.endT = t;
+    if (backToRest) { a.endT = t; this.lastRepEnd = t; this.restSince = t; }
     return out;
   }
 
   private trackRest(t: number, s: number, f: Features) {
     const high = this.def.signal!.rest === "high";
+    if (this.restSince === null) this.restSince = t;
     if (!Number.isFinite(this.restRef) || (high ? s > this.restRef - 3 : s < this.restRef + 3)) {
       this.restT = t;
       this.restRef = Number.isFinite(this.restRef) ? (high ? Math.max(this.restRef, s) : Math.min(this.restRef, s)) : s;
