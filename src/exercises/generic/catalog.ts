@@ -94,7 +94,7 @@ const benchPress: ExerciseDef = {
 
 const deadlift: ExerciseDef = {
   id: "conventional_deadlift", datasetId: "conventional_deadlift", name: "Conventional Barbell Deadlift", short: "Deadlift", equipment: "Barbell with plates, flat shoes",
-  mode: "reps", defaultView: "side", views: ["side"],
+  mode: "reps", defaultView: "side", views: ["side", "front", "diagonal"],
   filming: "Phone at knee-to-hip height, 2–3 m to your side, whole body and the bar in frame.",
   tips: [
     "Feet hip-width, bar over the middle of the foot (dl_01, dl_02).",
@@ -126,7 +126,7 @@ const deadlift: ExerciseDef = {
 
 const pullUp: ExerciseDef = {
   id: "pull_up", datasetId: "pull_up", name: "Pull-Up (overhand grip)", short: "Pull-up", equipment: "Pull-up bar",
-  mode: "reps", defaultView: "front", views: ["front", "side"],
+  mode: "reps", defaultView: "front", views: ["front", "side", "diagonal"],
   filming: "Phone 2–3 m in front of (or behind) you, low and tilted up so hands on the bar and feet are both in frame.",
   tips: [
     "Overhand grip, about shoulder-width or slightly wider (pu_01, pu_02).",
@@ -156,7 +156,7 @@ const pullUp: ExerciseDef = {
 
 const row: ExerciseDef = {
   id: "barbell_bent_over_row", datasetId: "barbell_bent_over_row", name: "Barbell Bent-Over Row", short: "Bent-over row", equipment: "Barbell with plates",
-  mode: "reps", defaultView: "side", views: ["side"],
+  mode: "reps", defaultView: "side", views: ["side", "front", "diagonal"],
   filming: "Phone at hip height, 2–3 m to your side, whole body and the bar in frame.",
   tips: [
     "Feet about shoulder-width, knees slightly bent (row_02).",
@@ -183,7 +183,7 @@ const row: ExerciseDef = {
 
 const overheadPress: ExerciseDef = {
   id: "overhead_press", datasetId: "overhead_press", name: "Barbell Overhead (Standing) Press", short: "Overhead press", equipment: "Barbell, rack",
-  mode: "reps", defaultView: "side", views: ["side"],
+  mode: "reps", defaultView: "side", views: ["side", "front", "diagonal"],
   filming: "Phone at chest height, 2–3 m to your side, whole body and the bar at lockout in frame.",
   tips: [
     "Grip just outside the shoulders, forearms vertical, wrists stacked (oh_01, oh_02).",
@@ -210,7 +210,7 @@ const overheadPress: ExerciseDef = {
 
 const curl: ExerciseDef = {
   id: "barbell_curl", datasetId: "barbell_curl", name: "Standing Barbell Biceps Curl", short: "Barbell curl", equipment: "Barbell or EZ bar",
-  mode: "reps", defaultView: "side", views: ["side"],
+  mode: "reps", defaultView: "side", views: ["side", "front", "diagonal"],
   filming: "Phone at chest height, 2–3 m to your side, upper body and hips in frame.",
   tips: [
     "Feet shoulder-width, standing tall (cu_01).",
@@ -234,7 +234,7 @@ const curl: ExerciseDef = {
 
 const dip: ExerciseDef = {
   id: "parallel_bar_dip", datasetId: "parallel_bar_dip", name: "Parallel-Bar Dip", short: "Dip", equipment: "Parallel bars",
-  mode: "reps", defaultView: "side", views: ["side"],
+  mode: "reps", defaultView: "side", views: ["side", "front", "diagonal"],
   filming: "Phone at hip height, 2–3 m to your side, the bars and your whole body in frame.",
   tips: [
     "Neutral grip, palms facing each other (dp_01).",
@@ -258,7 +258,7 @@ const dip: ExerciseDef = {
 
 const lunge: ExerciseDef = {
   id: "forward_lunge", datasetId: "forward_lunge", name: "Forward Lunge (bodyweight)", short: "Forward lunge", equipment: "None",
-  mode: "reps", defaultView: "side", views: ["side"],
+  mode: "reps", defaultView: "side", views: ["side", "front", "diagonal"],
   filming: "Phone at hip height, 2–3 m to your side; step toward or away from it is fine as long as both feet stay in frame.",
   tips: [
     "Start with feet hip- to shoulder-width (lu_01).",

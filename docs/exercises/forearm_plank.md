@@ -67,7 +67,7 @@ Cue spoken for each error: Hips sagging: "Lift your hips into a straight line"; 
 ## Limitations
 
 - Numbers come from coaching texts, not biomechanics measurements; most limits are [Placeholder] values to be set from labeled reps and a coach (docs/how-scoring-works.md).
-- Angles are 2D, from the side nearer the camera; they are only valid when the camera sees the movement from the stated view.
+- Angles come from a 3D skeleton: the 2D landmarks plus the person's segment lengths (body profile, or learned in the first seconds), with MediaPipe's depth used only for toward/away. This lets side-view checks run from the front or at 45°, but those views are not yet validated against a side camera (docs/body-and-3d.md). Without world landmarks the app falls back to 2D angles from the side nearer the camera.
 - The pose model has no spine points: rounding or arching of the back can't be measured.
 - There is no bar keypoint; the hands stand in for the bar.
 

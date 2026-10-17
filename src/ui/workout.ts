@@ -8,6 +8,8 @@ import { drawGhost, drawUser, tempoPhase } from "../exercises/squat/draw";
 import type { Rep } from "../exercises/squat/reps";
 import type { WorkoutRecord } from "../data/api";
 import { setPendingWorkout } from "./pending";
+import { FramingCoach } from "../pose/framing";
+import { openCamera, syncCanvas } from "./camera";
 import { h, mount, topbar } from "./dom";
 
 const TH_KEY = "formcoach.squat.thresholds.v2";
@@ -123,6 +125,7 @@ export function workoutPage(): () => void {
   const reps: Rep[] = [];
   const calibrations: WorkoutRecord["calibrations"] = [];
   let modelName: ModelName = "lite";
+  const framing = new FramingCoach();
 
   const setBanner = (t: string | null) => { banner.hidden = !t; if (t) banner.textContent = t; };
   const setCue = (t: string | null, kind = "") => { cue.hidden = !t; if (t) { cue.textContent = t; cue.className = "cue" + (kind ? " " + kind : ""); } };
@@ -137,7 +140,7 @@ export function workoutPage(): () => void {
     try { landmarker = await getLandmarker(prefs.model); modelName = prefs.model; }
     catch { startBtn.disabled = false; startBtn.textContent = "Start camera"; setStatus("Camera off"); error.textContent = "The pose model couldn't load. Check your internet connection and try again."; return; }
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: prefs.facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      stream = await openCamera(prefs.facing);
       video.srcObject = stream;
       await video.play();
     } catch (e) {
@@ -172,6 +175,8 @@ export function workoutPage(): () => void {
     if (!running || !landmarker || !coach) return;
     if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
       lastVideoTime = video.currentTime;
+      // The video changed shape (phone turned): the calibration was measured in the old shape.
+      if (syncCanvas(video, canvas)) { coach.aspect = video.videoWidth / video.videoHeight; coach.recalibrate(); calib.hidden = false; }
       const now = performance.now();
       let pose: Pose | null = null, world: WorldPose | null = null;
       try {
@@ -195,16 +200,17 @@ export function workoutPage(): () => void {
   function onFrame(t: number, raw: Pose | null, world: WorldPose | null) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const st = coach!.step(t, raw, world);
-    if (st.phase === "no-person") { setStatus("No one in view"); setBanner(st.banner); setMeter(0); return; }
+    if (st.phase === "no-person") { setStatus("No one in view"); setBanner(st.banner); setMeter(0); framing.update(null); return; }
+    const frameHint = framing.update(st.pose);
     if (st.phase === "calibrating") {
-      calib.hidden = false; setStatus("Calibrating"); setBanner(null);
+      calib.hidden = false; setStatus("Calibrating"); setBanner(frameHint);
       calibBar.style.width = Math.round(st.progress * 100) + "%";
       if (st.message) calibMsg.textContent = st.message;
       drawUser(ctx, st.pose, {});
       return;
     }
     setStatus("Tracking", true);
-    setBanner(st.banner);
+    setBanner(frameHint ?? st.banner);
     if (st.event === "calibrated") {
       calib.hidden = true;
       calibrations.push({ t, cal: st.cal });

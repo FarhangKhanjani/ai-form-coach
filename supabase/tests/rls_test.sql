@@ -37,6 +37,9 @@ do $$ begin
   begin update public.profiles set role = 'coach' where id = auth.uid(); raise exception 'role change allowed';
   exception when insufficient_privilege then null; end;
 end $$;
+-- A can save their own body measurements (migration 5)
+update public.profiles set body = '{"dims": {"thigh": 44.5}, "heightCm": 180, "method": "photos"}' where id = auth.uid();
+do $$ begin assert (select body->'dims'->>'thigh' from public.profiles where id = auth.uid()) = '44.5', 'body saved'; end $$;
 -- A cannot claim a coach label
 do $$ begin
   begin insert into public.rep_labels (rep_id, labeler_id, labeler_role, correct) values ('20000000-0000-0000-0000-000000000001', auth.uid(), 'coach', false);
@@ -58,6 +61,7 @@ do $$ begin
   assert (select count(*) from public.rep_keypoints) = 0, 'B sees A keypoints';
   assert (select count(*) from public.rep_labels) = 0, 'B sees A labels';
   assert (select count(*) from public.profiles) = 1, 'B sees other profiles';
+  assert (select count(*) from public.profiles where body is not null) = 0, 'B sees A body measurements';
   assert (select count(*) from public.exercises) = 13, 'B reads catalog';
 end $$;
 

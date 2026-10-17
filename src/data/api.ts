@@ -2,6 +2,7 @@ import { supabase } from "../supabase";
 
 import type { Calibration } from "../exercises/squat/calibration";
 import { RULE_SET, type CameraView } from "../exercises/squat/config";
+import type { BodyDims } from "../pose/lift";
 
 /** A workout recorded in the browser, before it's saved. Video is never part of it. */
 /** What every exercise engine reports per rep (the squat coach and the generic catalog coach). */
@@ -34,7 +35,7 @@ export interface WorkoutRecord {
 /** The user's own judgment of a rep. */
 export interface RepLabel { correct: boolean; errors: string[]; note?: string }
 
-export const APP_VERSION = "0.5.0";
+export const APP_VERSION = "0.6.0";
 
 export async function currentUserId(): Promise<string> {
   const { data } = await supabase.auth.getSession();
@@ -151,14 +152,30 @@ export async function exportSession(id: string) {
   return { app: "ai-form-coach", version: 2, exportedAt: new Date().toISOString(), session: s };
 }
 
-export interface Profile { id: string; display_name: string | null; avatar_url: string | null; role: string; height_cm: number | null; consent_training: boolean }
+/** Body measurements from the profile photos (src/pose/bodyScan.ts). Numbers only; the photos never leave the phone. */
+export interface BodyProfile {
+  /** Segment lengths in cm. */
+  dims: BodyDims;
+  heightCm: number;
+  /** Photos used and when. */
+  photos: { view: "front" | "side" }[];
+  measuredAt: string;
+  method: "photos";
+}
+
+export interface Profile { id: string; display_name: string | null; avatar_url: string | null; role: string; height_cm: number | null; consent_training: boolean; body: BodyProfile | null }
+
+const PROFILE_COLS = "id, display_name, avatar_url, role, height_cm, consent_training";
 
 export async function getProfile(): Promise<Profile> {
   const id = await currentUserId();
-  return check(await supabase.from("profiles").select("id, display_name, avatar_url, role, height_cm, consent_training").eq("id", id).single()) as Profile;
+  const res = await supabase.from("profiles").select(`${PROFILE_COLS}, body`).eq("id", id).single();
+  // Until migration 5 (profiles.body) is applied, read the profile without it.
+  if (res.error && /body/.test(res.error.message)) return { ...(check(await supabase.from("profiles").select(PROFILE_COLS).eq("id", id).single()) as Profile), body: null };
+  return check(res) as Profile;
 }
 
-export async function updateProfile(p: Partial<Pick<Profile, "display_name" | "height_cm" | "consent_training">>) {
+export async function updateProfile(p: Partial<Pick<Profile, "display_name" | "height_cm" | "consent_training" | "body">>) {
   const id = await currentUserId();
   check(await supabase.from("profiles").update(p).eq("id", id));
 }

@@ -1,7 +1,8 @@
 // Coach for every exercise in the catalog: smoothing, framing check, rep (or hold) detection on the
 // exercise's signal, and scoring each finished rep with the exercise's checks. No DOM.
 import { PoseSmoother, type Pose, type WorldPose } from "../../pose/types";
-import { computeFeatures, type Features } from "./features";
+import { Lifter, type BodyDims, type Lifted } from "../../pose/lift";
+import { computeFeatures, computeFeatures3D, type BodyAxes, type Features } from "./features";
 import type { CameraView, ExerciseDef, RepSeries } from "./types";
 
 const AFTER_S = 0.6;     // frames kept after a rep for lockout checks
@@ -26,7 +27,9 @@ export interface GenericRep {
 export type GenericState =
   | { phase: "no-person"; banner: string }
   | { phase: "tracking"; pose: Pose; banner: string | null; event: "start" | GenericRep | null;
-      signal: number | null; features: Features | null; holdS: number | null; failing: string[] };
+      signal: number | null; features: Features | null; holdS: number | null; failing: string[];
+      /** 3D skeleton and body axes when world landmarks were available (for the ghost). */
+      lifted: Lifted | null; axes: BodyAxes | null };
 
 interface Active {
   start: number; peak: number; peakIdx: number;
@@ -45,7 +48,13 @@ export class GenericCoach {
   private count = 0;
   private outSince: number | null = null;   // hold mode: time the person left the position
 
-  constructor(public def: ExerciseDef, public aspect: number, public view: CameraView = def.defaultView) {}
+  private lifter: Lifter;
+  /** True while features come from the 3D skeleton (then side-view checks also run from the front or at 45°). */
+  private lifted = false;
+
+  constructor(public def: ExerciseDef, public aspect: number, public view: CameraView = def.defaultView, body: BodyDims | null = null) {
+    this.lifter = new Lifter(body);
+  }
 
   get repCount() { return this.count; }
   get inRep() { return this.active !== null && this.active.endT === null; }
@@ -56,9 +65,13 @@ export class GenericCoach {
       return { phase: "no-person", banner: "Step into the frame so the camera can see you." };
     }
     const pose = this.smoother.push(raw);
-    const f = computeFeatures(pose, this.aspect);
+    const lifted = this.lifter.lift(pose, world, this.aspect);
+    let f: Features, axes: BodyAxes | null = null;
+    if (lifted) ({ f, axes } = computeFeatures3D(lifted.pts, pose));
+    else f = computeFeatures(pose, this.aspect);
+    this.lifted = lifted !== null;
     if (f.visibility < 0.5) {
-      return { phase: "tracking", pose, banner: "Make sure your whole body is in view, side-on to the camera if possible.", event: this.flushIfStale(t), signal: null, features: null, holdS: null, failing: [] };
+      return { phase: "tracking", pose, banner: "Make sure your whole body is in view.", event: this.flushIfStale(t), signal: null, features: null, holdS: null, failing: [], lifted, axes };
     }
     const frame = {
       t: 0,
@@ -68,7 +81,7 @@ export class GenericCoach {
     const ev = this.def.mode === "hold" ? this.stepHold(t, f, frame) : this.stepReps(t, f, frame);
     const signal = this.def.signal ? this.def.signal.feature(f) : null;
     const holdS = this.def.mode === "hold" && this.active && this.active.endT === null ? t - this.active.start : null;
-    return { phase: "tracking", pose, banner: null, event: ev, signal, features: f, holdS, failing: this.liveFailing() };
+    return { phase: "tracking", pose, banner: null, event: ev, signal, features: f, holdS, failing: this.liveFailing(), lifted, axes };
   }
 
   /** Checks failing on the rep so far (for live cues); only checks that make sense mid-rep. */
@@ -80,7 +93,10 @@ export class GenericCoach {
       .filter(c => { const v = c.measure(series); return v !== null && fails(v, c.limit); }).map(c => c.code);
   }
 
-  private checksForView() { return this.def.checks.filter(c => c.views.includes(this.view)); }
+  /** Checks for the camera view. With the 3D skeleton, side-view checks also run from the front and at 45°. */
+  private checksForView() {
+    return this.def.checks.filter(c => c.views.includes(this.view) || (this.lifted && c.views.includes("side") && this.view !== "side"));
+  }
 
   private stepReps(t: number, f: Features, frame: GenericRep["frames"][number]): "start" | GenericRep | null {
     const sig = this.def.signal!;

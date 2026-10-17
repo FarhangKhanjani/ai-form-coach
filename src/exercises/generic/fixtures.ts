@@ -1,5 +1,6 @@
 // Scripted side-view reps per catalog exercise (rest pose, good peak pose, and a faulty variant), for tests.
 import type { PlanarSpec } from "./planar";
+import { REFERENCE } from "./reference";
 
 export interface Fixture {
   rest: PlanarSpec;
@@ -18,8 +19,8 @@ const bar: [number, number] = [0.5, 0.1];
 
 export const FIXTURES: Record<string, Fixture> = {
   back_squat: {
-    rest: { ...stand, upperArm: -40, forearm: 60 },
-    peak: { shin: 25, thigh: -95, trunk: 40, upperArm: -10, forearm: 80 },
+    rest: REFERENCE.back_squat.rest,
+    peak: REFERENCE.back_squat.peak,
     faults: [
       { code: "not_deep_enough", peak: { shin: 20, thigh: -55, trunk: 30, upperArm: -10, forearm: 80 } },
       { code: "heels_lifting", peak: { shin: 25, thigh: -95, trunk: 40, upperArm: -10, forearm: 80, heelLift: 0.04 } },
@@ -30,24 +31,24 @@ export const FIXTURES: Record<string, Fixture> = {
     ]
   },
   bench_press: {
-    rest: { ...stand, upperArm: 90, forearm: 90, rotate: -90 },
-    peak: { ...stand, upperArm: -30, forearm: 90, rotate: -90 },
+    rest: REFERENCE.bench_press.rest,
+    peak: REFERENCE.bench_press.peak,
     faults: [
       { code: "half_rep", peak: { ...stand, upperArm: 20, forearm: 90, rotate: -90 } },
       { code: "forearms_not_vertical", peak: { ...stand, upperArm: -30, forearm: 60, rotate: -90 } }
     ]
   },
   conventional_deadlift: {
-    rest: { shin: 20, thigh: -70, trunk: 50, upperArm: 0, forearm: 0 },
-    peak: { ...stand },
+    rest: REFERENCE.conventional_deadlift.rest,
+    peak: REFERENCE.conventional_deadlift.peak,
     faults: [
       { code: "no_lockout", peak: { shin: 5, thigh: -5, trunk: 30, upperArm: 0, forearm: 0 } },
       { code: "leaning_back", peak: { ...stand, trunk: -20 } }
     ]
   },
   pull_up: {
-    rest: { ...stand, upperArm: 180, forearm: 180, anchor: { joint: "wrist", at: bar } },
-    peak: { ...stand, upperArm: 20, forearm: 170, anchor: { joint: "wrist", at: bar } },
+    rest: REFERENCE.pull_up.rest,
+    peak: REFERENCE.pull_up.peak,
     faults: [
       { code: "chin_below_bar", peak: { ...stand, upperArm: 80, forearm: 175, anchor: { joint: "wrist", at: bar } } },
       { code: "fast_lowering", times: [1.2, 0.8] },
@@ -59,16 +60,16 @@ export const FIXTURES: Record<string, Fixture> = {
     downS: 1.2, upS: 2.5
   },
   barbell_bent_over_row: {
-    rest: { shin: 10, thigh: -20, trunk: 60, upperArm: 0, forearm: 0 },
-    peak: { shin: 10, thigh: -20, trunk: 60, upperArm: -60, forearm: 30 },
+    rest: REFERENCE.barbell_bent_over_row.rest,
+    peak: REFERENCE.barbell_bent_over_row.peak,
     faults: [
       { code: "torso_too_upright", rest: { shin: 10, thigh: -10, trunk: 20, upperArm: 0, forearm: 0 }, peak: { shin: 10, thigh: -10, trunk: 20, upperArm: -60, forearm: 30 } },
       { code: "torso_swing", peak: { shin: 10, thigh: -20, trunk: 35, upperArm: -60, forearm: 30 } }
     ]
   },
   overhead_press: {
-    rest: { ...stand, upperArm: 30, forearm: 160 },
-    peak: { ...stand, upperArm: 180, forearm: 180 },
+    rest: REFERENCE.overhead_press.rest,
+    peak: REFERENCE.overhead_press.peak,
     faults: [
       { code: "layback", peak: { ...stand, trunk: -20, upperArm: 160, forearm: 160 } },
       { code: "using_legs", keys: [
@@ -78,16 +79,16 @@ export const FIXTURES: Record<string, Fixture> = {
     ]
   },
   barbell_curl: {
-    rest: { ...stand, upperArm: 0, forearm: 10 },
-    peak: { ...stand, upperArm: 10, forearm: 150 },
+    rest: REFERENCE.barbell_curl.rest,
+    peak: REFERENCE.barbell_curl.peak,
     faults: [
       { code: "torso_swing", peak: { ...stand, trunk: -15, upperArm: 10, forearm: 150 } },
       { code: "elbows_forward", peak: { ...stand, upperArm: 45, forearm: 170 } }
     ]
   },
   parallel_bar_dip: {
-    rest: { ...stand, trunk: 10, upperArm: 0, forearm: 0 },
-    peak: { ...stand, trunk: 25, upperArm: -70, forearm: 15 },
+    rest: REFERENCE.parallel_bar_dip.rest,
+    peak: REFERENCE.parallel_bar_dip.peak,
     faults: [
       { code: "not_deep_enough", peak: { ...stand, trunk: 15, upperArm: -40, forearm: 15 } },
       { code: "fast_lowering", times: [0.5, 1.2] }
@@ -95,8 +96,8 @@ export const FIXTURES: Record<string, Fixture> = {
     downS: 1.6, upS: 1.2
   },
   forward_lunge: {
-    rest: { ...stand, backLeg: { thighDown: 0, shinDown: 0 } },
-    peak: { shin: 5, thigh: -85, trunk: 5, upperArm: 0, forearm: 0, backLeg: { thighDown: -10, shinDown: -95 } },
+    rest: REFERENCE.forward_lunge.rest,
+    peak: REFERENCE.forward_lunge.peak,
     faults: [
       { code: "not_deep_enough", peak: { shin: 5, thigh: -45, trunk: 5, upperArm: 0, forearm: 0, backLeg: { thighDown: -10, shinDown: -60 } } },
       { code: "torso_lean", peak: { shin: 5, thigh: -85, trunk: 35, upperArm: 0, forearm: 0, backLeg: { thighDown: -10, shinDown: -95 } } },
@@ -104,8 +105,8 @@ export const FIXTURES: Record<string, Fixture> = {
     ]
   },
   forearm_plank: {
-    rest: { ...stand, upperArm: 90, forearm: 180, rotate: 90 },
-    peak: { ...stand, upperArm: 90, forearm: 180, rotate: 90 },
+    rest: REFERENCE.forearm_plank.rest,
+    peak: REFERENCE.forearm_plank.peak,
     faults: [
       { code: "hips_sagging", peak: { shin: 0, thigh: 12, trunk: -12, upperArm: 102, forearm: 192, rotate: 90 } },
       { code: "hips_piked", peak: { shin: 0, thigh: -15, trunk: 15, upperArm: 75, forearm: 165, rotate: 90 } }

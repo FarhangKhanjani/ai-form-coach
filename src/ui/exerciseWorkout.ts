@@ -5,6 +5,12 @@ import { byId } from "../exercises/generic/catalog";
 import { GenericCoach, type GenericRep } from "../exercises/generic/engine";
 import type { CameraView, CheckDef, ExerciseDef } from "../exercises/generic/types";
 import { drawUser } from "../exercises/squat/draw";
+import { drawGhostPose, ghostPose, ghostSpec, repProgress, tempoProgress } from "../exercises/generic/ghost";
+import { REFERENCE } from "../exercises/generic/reference";
+import { FramingCoach } from "../pose/framing";
+import type { BodyDims } from "../pose/lift";
+import { getProfile } from "../data/api";
+import { openCamera, syncCanvas } from "./camera";
 import { setPendingWorkout } from "./pending";
 import { h, mount, topbar } from "./dom";
 
@@ -27,7 +33,11 @@ export function exerciseWorkoutPage(id: string): () => void {
   const found = byId(id);
   if (!found) { location.hash = "#/"; return () => {}; }
   const base: ExerciseDef = found;
-  const prefs = load(PREF_KEY, { model: "lite" as ModelName, facing: "user", voice: true });
+  const prefs = load(PREF_KEY, { model: "lite" as ModelName, facing: "user", voice: true, ghost: "follow" });
+  const ref = REFERENCE[id];
+  // Body profile (Profile → Body measurements): exact segment lengths for the 3D skeleton and the ghost.
+  let body: BodyDims | null = null;
+  getProfile().then(p => { body = p.body?.dims ?? null; }).catch(() => { /* not signed in or no profile: lengths are learned live */ });
   const limits: Record<string, CheckDef["limit"]> = load(limitsKey(id), Object.fromEntries(base.checks.map(c => [c.code, { ...c.limit }])));
   const defWithLimits = (): ExerciseDef => ({ ...base, checks: base.checks.map(c => ({ ...c, limit: limits[c.code] ?? c.limit })) });
 
@@ -65,6 +75,13 @@ export function exerciseWorkoutPage(id: string): () => void {
   const finishBtn = h("button", { class: "btn", disabled: true }, "Finish & review");
   const voice = h("input", { type: "checkbox" }); voice.checked = prefs.voice;
   voice.addEventListener("change", () => { prefs.voice = voice.checked; save(PREF_KEY, prefs); });
+  const ghostRadios = ([["follow", "Ghost follows you"], ["lead", "Ghost leads the tempo"], ["off", "No ghost"]] as const).map(([v, label]) => {
+    const r = h("input", { type: "radio", name: "ghost", value: v });
+    r.checked = prefs.ghost === v;
+    r.addEventListener("change", () => { prefs.ghost = v; save(PREF_KEY, prefs); tempoStart = performance.now() / 1000; });
+    return h("label", {}, r, " ", label);
+  });
+  const framing = new FramingCoach();
 
   const limitRows = base.checks.map(c => {
     const key = c.limit.min !== undefined ? "min" : "max";
@@ -88,7 +105,10 @@ export function exerciseWorkoutPage(id: string): () => void {
       h("section", { class: "panel" },
         h("div", { class: "actions" }, finishBtn),
         live, fps,
-        h("div", { class: "choice" }, h("label", {}, voice, " Speak cues")),
+        h("div", { class: "choice" }, ...(ref && base.mode === "reps" ? ghostRadios : ref ? ghostRadios.filter((_, i) => i !== 1) : []), h("label", {}, voice, " Speak cues")),
+        h("ul", { class: "legend" },
+          h("li", {}, h("span", { class: "sw ghost" }), "Ghost: correct form, built to your body"),
+          h("li", {}, h("span", { class: "sw you" }), "You")),
         h("details", { class: "rules" },
           h("summary", {}, "Checks and limits"),
           h("p", { class: "note" }, "From docs/research/exercise_technique_dataset.json. Limits marked [Placeholder] are starting values; a coach sets the final ones. Changes are kept on this device."),
@@ -100,7 +120,7 @@ export function exerciseWorkoutPage(id: string): () => void {
 
   let landmarker: PoseLandmarker | null = null;
   let stream: MediaStream | null = null;
-  let running = false, lastVideoTime = -1, raf = 0, t0 = 0, frames = 0, fpsT = performance.now(), lastLiveCue = 0;
+  let running = false, lastVideoTime = -1, raf = 0, t0 = 0, tempoStart = 0, frames = 0, fpsT = performance.now(), lastLiveCue = 0;
   let coach: GenericCoach | null = null;
   let startedAt = "";
   let modelName: ModelName = "lite";
@@ -120,7 +140,7 @@ export function exerciseWorkoutPage(id: string): () => void {
     try { landmarker = await getLandmarker(prefs.model); modelName = prefs.model; }
     catch { startBtn.disabled = false; startBtn.textContent = "Start camera"; setStatus("Camera off"); error.textContent = "The pose model couldn't load. Check your connection and try again."; return; }
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: prefs.facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      stream = await openCamera(prefs.facing);
       video.srcObject = stream;
       await video.play();
     } catch (e) {
@@ -134,10 +154,10 @@ export function exerciseWorkoutPage(id: string): () => void {
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     const mirror = prefs.facing === "user";
     video.classList.toggle("mirror", mirror); canvas.classList.toggle("mirror", mirror);
-    coach = new GenericCoach(defWithLimits(), video.videoWidth / video.videoHeight, viewSel.value as CameraView);
+    coach = new GenericCoach(defWithLimits(), video.videoWidth / video.videoHeight, viewSel.value as CameraView, body);
     startBtn.disabled = false; startBtn.textContent = "Start camera";
     intro.hidden = true;
-    t0 = performance.now() / 1000;
+    t0 = performance.now() / 1000; tempoStart = t0;
     if (!startedAt) startedAt = new Date().toISOString();
     finishBtn.disabled = false;
     running = true; lastVideoTime = -1;
@@ -156,6 +176,7 @@ export function exerciseWorkoutPage(id: string): () => void {
     if (!running || !landmarker || !coach) return;
     if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
       lastVideoTime = video.currentTime;
+      if (syncCanvas(video, canvas)) coach.aspect = video.videoWidth / video.videoHeight;
       const now = performance.now();
       let pose: Pose | null = null, world: WorldPose | null = null;
       try {
@@ -175,9 +196,13 @@ export function exerciseWorkoutPage(id: string): () => void {
   function onFrame(t: number, raw: Pose | null, world: WorldPose | null) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const st = coach!.step(t, raw, world);
-    if (st.phase === "no-person") { setStatus("No one in view"); setBanner(st.banner); setMeter(0); return; }
+    if (st.phase === "no-person") { setStatus("No one in view"); setBanner(st.banner); setMeter(0); framing.update(null); return; }
     setStatus("Tracking", true);
-    setBanner(st.banner);
+    setBanner(framing.update(st.pose) ?? st.banner);
+    if (ref && prefs.ghost !== "off" && st.lifted && st.axes && st.features) {
+      const phase = prefs.ghost === "lead" ? tempoProgress(ref, performance.now() / 1000 - tempoStart) : repProgress(base, st.signal);
+      drawGhostPose(ctx, ghostPose(ref, ghostSpec(ref, base, phase), st.lifted, st.axes, st.features.facing, coach!.aspect));
+    }
     drawUser(ctx, st.pose, {});
     const sig = base.signal;
     if (sig && st.signal !== null) {

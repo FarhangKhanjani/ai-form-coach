@@ -1,6 +1,7 @@
 import { supabase } from "../supabase";
 import { getProfile, updateProfile, deleteAllMySessions } from "../data/api";
 import { h, mount, topbar, errorText } from "./dom";
+import { bodyScanPanel } from "./bodyScanPanel";
 
 export async function profilePage() {
   const body = h("div", {}, h("p", { class: "muted" }, "Loading…"));
@@ -16,7 +17,7 @@ export async function profilePage() {
       h("label", { class: "field" }, "Name", name),
       h("label", { class: "field" }, "Height (cm, optional)", height),
       h("label", { class: "check" }, consent,
-        h("span", {}, "Use my reps to improve the coach. Coaches on the team can then see my keypoints and labels to build and check the rules. Never video. You can switch this off any time.")),
+        h("span", {}, "Use my reps to improve the coach. Coaches on the team can then see my keypoints, labels and body measurements to build and check the rules. Never video. You can switch this off any time.")),
       h("button", { class: "btn", type: "submit" }, "Save"), status);
     form.addEventListener("submit", async e => {
       e.preventDefault();
@@ -35,7 +36,8 @@ export async function profilePage() {
           if (!confirm("Delete all your saved sessions, reps and keypoints? This can't be undone.")) return;
           await deleteAllMySessions(); alert("All your sessions were deleted.");
         } }, "Delete all my data")),
-      h("p", { class: "fineprint" }, "To delete your account itself, ask the team; it removes everything linked to it."));
+      h("p", { class: "fineprint" }, "To delete your account itself, ask the team; it removes everything linked to it."),
+      bodyScanPanel(p, height));
   } catch (e) {
     body.replaceChildren(h("p", { class: "error" }, errorText(e)));
   }

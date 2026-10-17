@@ -23,6 +23,9 @@ with checks(item, expected, actual) as (
       where table_schema = 'public' and table_name = 'sessions' and column_name = 'thresholds')),
   ('sessions.source and source_meta columns (migration 3)', 2, (select count(*) from information_schema.columns
       where table_schema = 'public' and table_name = 'sessions' and column_name in ('source', 'source_meta'))),
-  ('catalog error types (migration 4)', 39, (select count(*) from public.exercise_errors where exercise_id <> 'squat'))
+  ('catalog error types (migration 4)', 39, (select count(*) from public.exercise_errors where exercise_id <> 'squat')),
+  ('profiles.body column, editable by users (migration 5)', 1, (select count(*) from information_schema.column_privileges
+      where table_schema = 'public' and table_name = 'profiles' and column_name = 'body'
+      and grantee = 'authenticated' and privilege_type = 'UPDATE'))
 )
 select item, expected, actual, expected = actual as ok from checks;

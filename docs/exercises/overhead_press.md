@@ -8,7 +8,7 @@ Equipment: Barbell, rack. Mode: reps.
 
 Phone at chest height, 2–3 m to your side, whole body and the bar at lockout in frame.
 
-Views: side (default **side**).
+Views: side, front, diagonal (default **side**).
 
 Rep detection: elbow angle; at rest it is low; a rep starts past 110°, ends back past 100°, and only counts if it reaches 150°. [Placeholder] thresholds.
 
@@ -75,7 +75,7 @@ Cue spoken for each error: Leaning back: "Squeeze glutes, ribs down, don't lean 
 ## Limitations
 
 - Numbers come from coaching texts, not biomechanics measurements; most limits are [Placeholder] values to be set from labeled reps and a coach (docs/how-scoring-works.md).
-- Angles are 2D, from the side nearer the camera; they are only valid when the camera sees the movement from the stated view.
+- Angles come from a 3D skeleton: the 2D landmarks plus the person's segment lengths (body profile, or learned in the first seconds), with MediaPipe's depth used only for toward/away. This lets side-view checks run from the front or at 45°, but those views are not yet validated against a side camera (docs/body-and-3d.md). Without world landmarks the app falls back to 2D angles from the side nearer the camera.
 - The pose model has no spine points: rounding or arching of the back can't be measured.
 - There is no bar keypoint; the hands stand in for the bar.
 

@@ -4,12 +4,13 @@ A camera-based workout coach: it tracks your body in real time, shows a transluc
 
 **App:** https://farhangkhanjani.github.io/ai-form-coach/ — open it on your phone and use "Add to Home screen" to install it like an app.
 
-Current stage: bodyweight squat (front camera, ghost) plus 10 lifts from the technique dataset (back squat, bench press, deadlift, pull-up, row, overhead press, curl, dip, lunge, plank), live or from imported videos, with per-rep labels; sign-up/sign-in (email or Google); sessions, reps, keypoints and labels saved to Supabase.
+Current stage: bodyweight squat (front camera, ghost) plus 10 lifts from the technique dataset (back squat, bench press, deadlift, pull-up, row, overhead press, curl, dip, lunge, plank), live or from imported videos, from the front, side or 45° (3D skeleton), with a ghost of the correct movement built to your body and per-rep labels; body measurements from two photos (analyzed on the phone, only the numbers saved); sign-up/sign-in (email or Google); sessions, reps, keypoints and labels saved to Supabase.
 
 ## Docs
 
 - Project context, decisions, backlog: [`docs/AI-Form-Coach-Project-Context.md`](docs/AI-Form-Coach-Project-Context.md)
 - How a rep is judged (pose model vs rules, when to train a model): [`docs/how-scoring-works.md`](docs/how-scoring-works.md)
+- Body measurements, 3D angles from one camera, the ghost: [`docs/body-and-3d.md`](docs/body-and-3d.md)
 - Datasets (what exists, licenses, what we can use): [`docs/datasets.md`](docs/datasets.md)
 - Collecting our own labeled data (permission, filming, labeling): [`docs/data-collection.md`](docs/data-collection.md)
 - What correct form is, per exercise, with sources: [`docs/exercises/`](docs/exercises/)
@@ -23,7 +24,7 @@ Current stage: bodyweight squat (front camera, ghost) plus 10 lifts from the tec
 | `src/exercises/generic/` | Engine for the 10 dataset exercises: features, rep/hold detection, catalog of checks with dataset sources, test fixtures |
 | `docs/research/` | The technique dataset the catalog is built from |
 | `src/exercises/squat/` | Squat coach without any UI: calibration, frame metrics, rep detection and scoring, ghost drawing, thresholds (`config.ts`) |
-| `src/pose/` | MediaPipe Pose loader, landmark types, 3D joint angles |
+| `src/pose/` | MediaPipe Pose loader, landmark types, 3D joint angles, 3D skeleton from known segment lengths (`lift.ts`), body measurements from photos (`bodyScan.ts`), framing hints |
 | `scripts/fetch-assets.mjs` | Puts the MediaPipe runtime and pose models (pinned SHA-256) into `public/mediapipe/`, so the app serves them itself; runs before `dev` and `build` |
 | `src/data/api.ts` | Supabase reads/writes (sessions, reps, keypoints, labels, profile) |
 | `src/ui/` | Screens: sign-in, home/history, workout, review, import video, session, profile |

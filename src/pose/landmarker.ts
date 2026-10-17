@@ -8,8 +8,11 @@ export const MODELS = {
   full: `${ASSETS}/pose_landmarker_full.task`
 };
 export type ModelName = keyof typeof MODELS;
-/** "live" for the camera, "import" for video files: separate instances because VIDEO mode needs increasing timestamps per instance. */
-export type Purpose = "live" | "import";
+/**
+ * "live" for the camera, "import" for video files: separate instances because VIDEO mode needs increasing
+ * timestamps per instance. "image" for still photos (body measurements).
+ */
+export type Purpose = "live" | "import" | "image";
 
 const cache = new Map<Purpose, { model: ModelName; lm: PoseLandmarker }>();
 
@@ -24,7 +27,7 @@ export async function getLandmarker(model: ModelName, purpose: Purpose = "live")
   const fileset = await FilesetResolver.forVisionTasks(`${ASSETS}/wasm`);
   const opts = (delegate: "GPU" | "CPU") => ({
     baseOptions: { modelAssetPath: MODELS[model], delegate },
-    runningMode: "VIDEO" as const,
+    runningMode: purpose === "image" ? "IMAGE" as const : "VIDEO" as const,
     numPoses: 1,
     minPoseDetectionConfidence: 0.5,
     minPosePresenceConfidence: 0.5,

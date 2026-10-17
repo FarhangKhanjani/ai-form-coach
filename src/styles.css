@@ -151,3 +151,10 @@ h2 { font-size: 26px; margin: 28px 0 12px; }
   .panel { border-left: 0; border-top: 1px solid var(--line); }
 }
 @media (prefers-reduced-motion: reduce) { .meter i, .bar i { transition: none; } }
+
+/* Profile → body measurements */
+.body-scan { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 16px; }
+.scan-photo { margin: 8px 0 14px; }
+.scan-preview { display: block; max-width: 100%; height: auto; border-radius: 10px; }
+table.dims { border-collapse: collapse; width: 100%; font-size: 14px; margin: 8px 0; }
+table.dims td { padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); }

@@ -69,7 +69,7 @@ function fromVertical(a: P, b: P): number {
   return t;
 }
 
-export function computeFeatures(pose: Pose, aspect: number): Features {
+export function computeFeatures(pose: Pose, aspect: number, facingOverride?: number): Features {
   const p = (i: number): P => ({ x: pose[i].x * aspect, y: pose[i].y });
   const vis = (ids: number[]) => ids.reduce((s, i) => s + pose[i].v, 0) / ids.length;
   const leftIds = [L.shoulderL, L.elbowL, L.wristL, L.hipL, L.kneeL, L.ankleL];
@@ -90,6 +90,7 @@ export function computeFeatures(pose: Pose, aspect: number): Features {
   // Facing: feet point forward; fall back to the nose relative to the ears.
   let facing = Math.sign(toe.x - heel.x);
   if (!facing || pose[S.toe].v < 0.5) facing = Math.sign(nose.x - midP(p(7), p(8)).x) || 1;
+  if (facingOverride) facing = facingOverride;
 
   const trunkVec = sub(sh, hip);
   const trunkFromVertical = fromVertical(hip, sh);
@@ -129,5 +130,67 @@ export function computeFeatures(pose: Pose, aspect: number): Features {
     earShoulderGap: (shoulderMid.y - midP(p(7), p(8)).y) / torsoLen,
     hipMid, shoulderMid, torsoLen, legLen,
     visibility: vis(useLeft ? leftIds : rightIds)
+  };
+}
+
+// ---- 3D: the same features from a lifted skeleton (src/pose/lift.ts), nearly independent of camera angle ----
+type V3 = { x: number; y: number; z: number };
+const s3 = (a: V3, b: V3): V3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+const dot3 = (a: V3, b: V3) => a.x * b.x + a.y * b.y + a.z * b.z;
+const ang3 = (a: V3, b: V3, c: V3) => {
+  const u = s3(a, b), v = s3(c, b), n = Math.hypot(u.x, u.y, u.z) * Math.hypot(v.x, v.y, v.z);
+  return n === 0 ? NaN : deg(Math.acos(Math.max(-1, Math.min(1, dot3(u, v) / n))));
+};
+
+/** The person's horizontal body axes in camera coordinates (x right, y down, z away from the camera). */
+export interface BodyAxes {
+  /** Toward the person's left. */
+  left: V3;
+  /** Horizontal, perpendicular to `left`: the person's forward when standing (sign fixed by `facing` in the features). */
+  fwd: V3;
+  /** How much the person faces the camera or away from it: 1 = straight on, 0 = side-on. */
+  frontness: number;
+}
+
+export function bodyAxes(P: V3[]): BodyAxes {
+  // Person's left from the hip and shoulder lines (MediaPipe labels left/right reliably).
+  const lr = { x: P[L.hipL].x - P[L.hipR].x + P[L.shoulderL].x - P[L.shoulderR].x, y: 0, z: P[L.hipL].z - P[L.hipR].z + P[L.shoulderL].z - P[L.shoulderR].z };
+  const n = Math.hypot(lr.x, lr.z) || 1;
+  const left = { x: lr.x / n, y: 0, z: lr.z / n };
+  // forward = left × up, with up = (0, −1, 0): facing the camera gives (0, 0, −1).
+  const fwd = { x: left.z, y: 0, z: -left.x };
+  return { left, fwd, frontness: Math.abs(left.x) };
+}
+
+/**
+ * Features from 3D points: a virtual side view (the body's sagittal plane) for the 2D measures, a virtual
+ * front view for widths, and true 3D angles at the joints. `pose` gives the visibilities.
+ */
+export function computeFeatures3D(P: V3[], pose: Pose): { f: Features; axes: BodyAxes } {
+  const axes = bodyAxes(P);
+  const o = { x: (P[L.hipL].x + P[L.hipR].x) / 2, y: 0, z: (P[L.hipL].z + P[L.hipR].z) / 2 };
+  const side: Pose = P.map((q, i) => ({ x: 0.5 + dot3(s3(q, o), axes.fwd), y: q.y, z: 0, v: pose[i].v }));
+  // Facing the camera (or away), forward is known from the hip line; side-on, the 2D code reads it from the feet and the nose.
+  const f = computeFeatures(side, 1, axes.frontness > 0.5 ? 1 : undefined);
+  const vis = (ids: number[]) => ids.reduce((s, i) => s + pose[i].v, 0) / ids.length;
+  const useLeft = vis([L.shoulderL, L.elbowL, L.wristL, L.hipL, L.kneeL, L.ankleL]) >= vis([L.shoulderR, L.elbowR, L.wristR, L.hipR, L.kneeR, L.ankleR]);
+  const S = useLeft ? { sh: L.shoulderL, el: L.elbowL, wr: L.wristL, hip: L.hipL, kn: L.kneeL, an: L.ankleL }
+    : { sh: L.shoulderR, el: L.elbowR, wr: L.wristR, hip: L.hipR, kn: L.kneeR, an: L.ankleR };
+  const kneeL = ang3(P[L.hipL], P[L.kneeL], P[L.ankleL]), kneeR = ang3(P[L.hipR], P[L.kneeR], P[L.ankleR]);
+  const leftFront = dot3(s3(P[L.ankleL], P[L.ankleR]), axes.fwd) * f.facing > 0;
+  const fl = (i: number) => dot3(s3(P[i], o), axes.left);
+  const ankleW = Math.abs(fl(L.ankleL) - fl(L.ankleR));
+  // In a near side-on view the left–right spread is a depth estimate: keep the 2D ratio's neutral value there.
+  const kneeAnkle = axes.frontness > 0.5 && ankleW > 0.01 ? Math.abs(fl(L.kneeL) - fl(L.kneeR)) / ankleW : f.kneeAnkleWidthRatio;
+  return {
+    axes,
+    f: {
+      ...f,
+      elbow: ang3(P[S.sh], P[S.el], P[S.wr]), knee: ang3(P[S.hip], P[S.kn], P[S.an]), hip: ang3(P[S.sh], P[S.hip], P[S.kn]),
+      kneeL, kneeR, frontKnee: leftFront ? kneeL : kneeR,
+      upperArmFromTorso: ang3(P[S.el], P[S.sh], P[S.hip]),
+      kneeAnkleWidthRatio: kneeAnkle,
+      visibility: f.visibility
+    }
   };
 }
