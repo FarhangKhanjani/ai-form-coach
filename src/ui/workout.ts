@@ -9,7 +9,7 @@ import type { Rep } from "../exercises/squat/reps";
 import type { WorkoutRecord } from "../data/api";
 import { setPendingWorkout } from "./pending";
 import { FramingCoach } from "../pose/framing";
-import { openCamera, syncCanvas } from "./camera";
+import { listCameras, openCamera, syncCanvas } from "./camera";
 import { h, mount, topbar } from "./dom";
 
 const TH_KEY = "formcoach.squat.thresholds.v2";
@@ -58,6 +58,10 @@ export function workoutPage(): () => void {
   const modelSel = h("select", {}, h("option", { value: "lite" }, "Lite (faster)"), h("option", { value: "full" }, "Full (more accurate)"));
   const camSel = h("select", {}, h("option", { value: "user" }, "Front camera"), h("option", { value: "environment" }, "Back camera"));
   modelSel.value = prefs.model; camSel.value = prefs.facing;
+  // Named cameras (e.g. ultra-wide lenses) once the browser has shown their names.
+  let camInfo = "", mirror = false;
+  if (prefs.facing.startsWith("device:")) { camSel.append(h("option", { value: prefs.facing }, "Last used camera")); camSel.value = prefs.facing; }
+  listCameras(camSel, prefs.facing);
   const startBtn = h("button", { class: "btn" }, "Start camera");
   const intro = h("div", { class: "overlay" },
     h("div", { class: "intro" },
@@ -140,7 +144,8 @@ export function workoutPage(): () => void {
     try { landmarker = await getLandmarker(prefs.model); modelName = prefs.model; }
     catch { startBtn.disabled = false; startBtn.textContent = "Start camera"; setStatus("Camera off"); error.textContent = "The pose model couldn't load. Check your internet connection and try again."; return; }
     try {
-      stream = await openCamera(prefs.facing);
+      const cam = await openCamera(prefs.facing);
+      stream = cam.stream; camInfo = cam.info; mirror = cam.mirror;
       video.srcObject = stream;
       await video.play();
     } catch (e) {
@@ -152,7 +157,7 @@ export function workoutPage(): () => void {
       return;
     }
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-    const mirror = prefs.facing === "user";
+    listCameras(camSel, prefs.facing);
     video.classList.toggle("mirror", mirror); canvas.classList.toggle("mirror", mirror);
     coach = new SquatCoach(th, video.videoWidth / video.videoHeight);
     startBtn.disabled = false; startBtn.textContent = "Start camera";
@@ -192,7 +197,7 @@ export function workoutPage(): () => void {
       }
       onFrame(now / 1000 - t0, pose, world);
       frames++;
-      if (now - fpsT > 1000) { fps.textContent = `${frames} frames per second · model: ${modelName}`; frames = 0; fpsT = now; }
+      if (now - fpsT > 1000) { fps.textContent = `${frames} frames per second · model: ${modelName} · ${camInfo}`; frames = 0; fpsT = now; }
     }
     raf = requestAnimationFrame(loop);
   }

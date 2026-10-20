@@ -12,6 +12,18 @@ Views: side, front, diagonal (default **side**).
 
 Rep detection: knee angle; at rest it is high; a rep starts past 150°, ends back past 160°, and only counts if it reaches 120°. [Placeholder] thresholds.
 
+## When a movement counts as a rep
+
+A movement is counted when at least 80% of these pass (criteria that can't be measured are left out). Otherwise the app says which ones failed. [Placeholder] values.
+
+- knees bent to 120° or less
+- hips dropped by 15% of leg length
+- both knees bent
+- hips bent
+- took 0.6–10 s
+- feet stayed in place
+- stance unchanged
+
 ## What the app checks
 
 | Error | Views | Correct if | Dataset checkpoints | Where the limit comes from |

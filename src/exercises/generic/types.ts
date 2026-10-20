@@ -33,6 +33,13 @@ export interface CheckDef {
   source: { checkpoints: string[]; limit: string };
 }
 
+export interface RepCriterion {
+  /** Short text shown when the movement isn't counted, e.g. "hips dropped". */
+  name: string;
+  /** true = passed, false = failed, null = couldn't be measured (left out of the share). */
+  test: (r: RepSeries) => boolean | null;
+}
+
 export interface RepSignalDef {
   /** Feature that goes away from rest and back once per rep. */
   feature: (f: Features) => number;
@@ -60,6 +67,13 @@ export interface ExerciseDef {
   /** Cues from the dataset the camera can't check (grip, breathing, bar placement …), shown before starting. */
   tips: string[];
   signal?: RepSignalDef;
+  /**
+   * What makes a movement a real rep of this exercise (not form checks). A movement is counted when at least
+   * `countShare` of the criteria that could be measured pass. Without criteria, a rep counts when the signal
+   * reaches `mustReach`.
+   */
+  countIf?: RepCriterion[];
+  countShare?: number;
   hold?: { inPosition: (f: Features) => boolean; targetS: number; targetSource: string };
   checks: CheckDef[];
   /** Dataset exercise id (docs/research/exercise_technique_dataset.json). */

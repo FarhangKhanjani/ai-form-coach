@@ -11,6 +11,8 @@ export interface Features {
   facing: number;
   /** Interior joint angles, degrees (180 = straight). */
   elbow: number; knee: number; hip: number;
+  /** Elbow angles of both arms. */
+  elbowL: number; elbowR: number;
   /** Knee angles of both legs (lunge needs both). */
   kneeL: number; kneeR: number;
   /** Segment angles from vertical, 0 = upright, degrees, unsigned. */
@@ -45,6 +47,10 @@ export interface Features {
   earShoulderGap: number;
   /** Raw positions used for path checks. */
   hipMid: P; shoulderMid: P;
+  /** Midpoint of the ankles in the picture (x × aspect, y), for "feet stayed in place". */
+  ankleMid: P;
+  /** Distance between the ankles in the picture (x × aspect, y), for "stance unchanged". */
+  ankleGap: number;
   torsoLen: number; legLen: number;
   /** Mean visibility of the key joints on the near side. */
   visibility: number;
@@ -112,6 +118,7 @@ export function computeFeatures(pose: Pose, aspect: number, facingOverride?: num
   return {
     facing,
     elbow: angle2(sh, el, wr), knee: angle2(hip, kn, an), hip: angle2(sh, hip, kn),
+    elbowL: angle2(p(L.shoulderL), p(L.elbowL), p(L.wristL)), elbowR: angle2(p(L.shoulderR), p(L.elbowR), p(L.wristR)),
     kneeL, kneeR,
     trunkFromVertical, shinFromVertical: fromVertical(an, kn), forearmFromVertical: fromVertical(el, wr), upperArmFromVertical: fromVertical(sh, el),
     trunkLeanSigned,
@@ -128,7 +135,7 @@ export function computeFeatures(pose: Pose, aspect: number, facingOverride?: num
     heelAboveToe: (toe.y - heel.y) / legLen,
     kneeAnkleWidthRatio: ankleW > 0.01 ? Math.abs(p(L.kneeL).x - p(L.kneeR).x) / ankleW : 1,
     earShoulderGap: (shoulderMid.y - midP(p(7), p(8)).y) / torsoLen,
-    hipMid, shoulderMid, torsoLen, legLen,
+    hipMid, shoulderMid, ankleMid: midP(p(L.ankleL), p(L.ankleR)), ankleGap: len(sub(p(L.ankleL), p(L.ankleR))), torsoLen, legLen,
     visibility: vis(useLeft ? leftIds : rightIds)
   };
 }
@@ -187,6 +194,9 @@ export function computeFeatures3D(P: V3[], pose: Pose): { f: Features; axes: Bod
     f: {
       ...f,
       elbow: ang3(P[S.sh], P[S.el], P[S.wr]), knee: ang3(P[S.hip], P[S.kn], P[S.an]), hip: ang3(P[S.sh], P[S.hip], P[S.kn]),
+      elbowL: ang3(P[L.shoulderL], P[L.elbowL], P[L.wristL]), elbowR: ang3(P[L.shoulderR], P[L.elbowR], P[L.wristR]),
+      ankleMid: { x: (P[L.ankleL].x + P[L.ankleR].x) / 2, y: (P[L.ankleL].y + P[L.ankleR].y) / 2 },
+      ankleGap: Math.hypot(P[L.ankleL].x - P[L.ankleR].x, P[L.ankleL].y - P[L.ankleR].y),
       kneeL, kneeR, frontKnee: leftFront ? kneeL : kneeR,
       upperArmFromTorso: ang3(P[S.el], P[S.sh], P[S.hip]),
       kneeAnkleWidthRatio: kneeAnkle,

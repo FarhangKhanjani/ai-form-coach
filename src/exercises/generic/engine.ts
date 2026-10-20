@@ -24,10 +24,15 @@ export interface GenericRep {
   frames: { t: number; lm: number[][]; world?: number[][] }[];
 }
 
+/** A movement that was not counted: how many rep criteria passed, and which failed. */
+export interface RejectedMove { passed: number; total: number; failed: string[] }
+
 export type GenericState =
   | { phase: "no-person"; banner: string }
   | { phase: "tracking"; pose: Pose; banner: string | null; event: "start" | GenericRep | null;
       signal: number | null; features: Features | null; holdS: number | null; failing: string[];
+      /** A movement that ended this frame but didn't pass enough of the exercise's rep criteria. */
+      rejected: RejectedMove | null;
       /** 3D skeleton and body axes when world landmarks were available (for the ghost). */
       lifted: Lifted | null; axes: BodyAxes | null };
 
@@ -47,6 +52,7 @@ export class GenericCoach {
   private lastRepEnd = -Infinity;   // touch-and-go: a rep right after the previous one needs no pause
   private count = 0;
   private outSince: number | null = null;   // hold mode: time the person left the position
+  private rejected: RejectedMove | null = null;
 
   private lifter: Lifter;
   /** True while features come from the 3D skeleton (then side-view checks also run from the front or at 45°). */
@@ -71,7 +77,8 @@ export class GenericCoach {
     else f = computeFeatures(pose, this.aspect);
     this.lifted = lifted !== null;
     if (f.visibility < 0.5) {
-      return { phase: "tracking", pose, banner: "Make sure your whole body is in view.", event: this.flushIfStale(t), signal: null, features: null, holdS: null, failing: [], lifted, axes };
+      const ev = this.flushIfStale(t);
+      return { phase: "tracking", pose, banner: "Make sure your whole body is in view.", event: ev, signal: null, features: null, holdS: null, failing: [], rejected: this.takeRejected(), lifted, axes };
     }
     const frame = {
       t: 0,
@@ -81,8 +88,10 @@ export class GenericCoach {
     const ev = this.def.mode === "hold" ? this.stepHold(t, f, frame) : this.stepReps(t, f, frame);
     const signal = this.def.signal ? this.def.signal.feature(f) : null;
     const holdS = this.def.mode === "hold" && this.active && this.active.endT === null ? t - this.active.start : null;
-    return { phase: "tracking", pose, banner: null, event: ev, signal, features: f, holdS, failing: this.liveFailing(), lifted, axes };
+    return { phase: "tracking", pose, banner: null, event: ev, signal, features: f, holdS, failing: this.liveFailing(), rejected: this.takeRejected(), lifted, axes };
   }
+
+  private takeRejected() { const r = this.rejected; this.rejected = null; return r; }
 
   /** Checks failing on the rep so far (for live cues); only checks that make sense mid-rep. */
   private liveFailing(): string[] {
@@ -189,16 +198,28 @@ export class GenericCoach {
   private finish(a: Active): GenericRep | null {
     const sig = this.def.signal;
     const hold = this.def.mode === "hold";
+    const series = this.series(a);
+    const metrics: Record<string, number | null> = {};
     if (!hold && sig) {
-      const reached = sig.rest === "high" ? a.peak <= sig.mustReach : a.peak >= sig.mustReach;
-      if (!reached) return null;
+      if (this.def.countIf?.length) {
+        // Counted only if enough of the exercise's rep criteria pass (jitter, walking, bending down are not reps).
+        const res = this.def.countIf.map(c => ({ name: c.name, ok: c.test(series) }));
+        const measured = res.filter(x => x.ok !== null);
+        const passed = measured.filter(x => x.ok).length;
+        if (measured.length < 3 || passed / measured.length < (this.def.countShare ?? 0.8)) {
+          this.rejected = { passed, total: measured.length, failed: measured.filter(x => !x.ok).map(x => x.name) };
+          return null;
+        }
+        metrics.countPassed = passed; metrics.countTotal = measured.length;
+      } else {
+        const reached = sig.rest === "high" ? a.peak <= sig.mustReach : a.peak >= sig.mustReach;
+        if (!reached) return null;
+      }
     }
     const end = a.endT ?? a.t[a.t.length - 1];
     const problems: string[] = [];
     if (a.f.length < MIN_FRAMES) problems.push(`only ${a.f.length} frames`);
     if (a.lowVis > 0.3 * a.f.length) problems.push("body partly out of view");
-    const series = this.series(a);
-    const metrics: Record<string, number | null> = {};
     const issues: string[] = [];
     for (const c of this.checksForView()) {
       const v = c.measure(series);

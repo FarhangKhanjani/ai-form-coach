@@ -45,6 +45,7 @@ describe("lifted 3D features", () => {
       const lifter = new Lifter(D);
       for (let i = 0; i < 30; i++) { const r = shoot("back_squat", REFERENCE.back_squat.rest, yaw); lifter.lift(r.pose, r.world, 1); }
       const { pose, world } = shoot("back_squat", spec, yaw);
+      for (let i = 0; i < 15; i++) lifter.lift(pose, world, 1);   // held for half a second (depth is smoothed over time)
       const { f } = computeFeatures3D(lifter.lift(pose, world, 1)!.pts, pose);
       return [f.knee, f.hip, f.trunkFromVertical, f.shinFromVertical];
     });

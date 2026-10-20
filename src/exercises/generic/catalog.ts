@@ -26,6 +26,19 @@ const pct = (k: K, p: number) => (r: RepSeries) => {
   return v.length ? v[Math.min(v.length - 1, Math.floor(p * v.length))] : null;
 };
 
+// ---- rep criteria helpers (is this movement a rep at all?) ----
+const peakF = (r: RepSeries) => r.f[r.peakIdx];
+const duration = (min: number, max: number) => (r: RepSeries) => { const d = r.end - r.start; return d >= min && d <= max; };
+/** The feet stayed where they were before the rep (walking or stepping is not a rep). */
+const feetStill = (maxLeg: number) => (r: RepSeries) => r.before
+  ? Math.max(...r.f.map(f => Math.hypot(f.ankleMid.x - r.before!.ankleMid.x, f.ankleMid.y - r.before!.ankleMid.y))) / r.before.legLen <= maxLeg
+  : null;
+
+/** The distance between the feet stayed the same (a step or a lunge is not a squat). */
+const stanceKept = (maxLeg: number) => (r: RepSeries) => r.before
+  ? Math.max(...r.f.map(f => Math.abs(f.ankleGap - r.before!.ankleGap))) / r.before.legLen <= maxLeg
+  : null;
+
 const SIDE = ["side"] as const;
 const SIDE_DIAG = ["side", "diagonal"] as const;
 
@@ -42,6 +55,17 @@ const backSquat: ExerciseDef = {
     "Safety pins just below your bottom position (sq_10)."
   ],
   signal: { feature: f => f.knee, label: "Knee angle", rest: "high", enter: 150, exit: 160, mustReach: 120 },
+  // [Placeholder] criteria; a squat counts when ≥ 80% pass. Hip drop and feet use the picture's vertical,
+  // which every camera angle sees directly, so camera jitter in depth can't fake a rep.
+  countIf: [
+    { name: "knees bent to 120° or less", test: r => r.signal[r.peakIdx] <= 120 },
+    { name: "hips dropped by 15% of leg length", test: r => r.before ? (peakF(r).hipMid.y - r.before.hipMid.y) / r.before.legLen >= 0.15 : null },
+    { name: "both knees bent", test: r => Math.max(peakF(r).kneeL, peakF(r).kneeR) <= 140 },
+    { name: "hips bent", test: r => peakF(r).hip <= 140 },
+    { name: "took 0.6–10 s", test: duration(0.6, 10) },
+    { name: "feet stayed in place", test: feetStill(0.15) },
+    { name: "stance unchanged", test: stanceKept(0.15) }
+  ],
   checks: [
     { code: "knees_caving", name: "Knees caving in", cue: "Push your knees out over your toes", severity: "safety", views: ["front"],
       measure: minOf(f => f.kneeAnkleWidthRatio), limit: { min: 0.9 }, unit: "×",
@@ -192,6 +216,15 @@ const overheadPress: ExerciseDef = {
     "Move the head back as the bar passes, then 'through the window' (oh_08)."
   ],
   signal: { feature: f => f.elbow, label: "Elbow angle", rest: "low", enter: 110, exit: 100, mustReach: 150 },
+  // [Placeholder] criteria; a press counts when ≥ 80% pass. Hand height is read straight from the picture.
+  countIf: [
+    { name: "arms straightened to 150° or more", test: r => r.signal[r.peakIdx] >= 150 },
+    { name: "hands above the head at the top", test: r => peakF(r).noseAboveWrist < -0.1 },
+    { name: "hands rose by 40% of torso length", test: r => r.before ? r.before.noseAboveWrist - peakF(r).noseAboveWrist >= 0.4 : null },
+    { name: "both arms pressed", test: r => Math.min(peakF(r).elbowL, peakF(r).elbowR) >= 140 },
+    { name: "took 0.5–10 s", test: duration(0.5, 10) },
+    { name: "feet stayed in place", test: feetStill(0.15) }
+  ],
   checks: [
     { code: "layback", name: "Leaning back", cue: "Squeeze glutes, ribs down, don't lean back", severity: "safety", views: [...SIDE],
       measure: minOf(f => f.trunkLeanSigned), limit: { min: -10 }, unit: "°",

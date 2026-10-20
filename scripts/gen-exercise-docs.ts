@@ -19,6 +19,11 @@ for (const d of CATALOG) {
   lines.push("## Camera", "", `${d.filming}`, "", `Views: ${d.views.map(v => VIEW[v]).join(", ")} (default **${d.defaultView}**).`, "");
   if (d.signal) lines.push(`Rep detection: ${d.signal.label.toLowerCase()}; at rest it is ${d.signal.rest}; a rep starts past ${d.signal.enter}°, ends back past ${d.signal.exit}°, and only counts if it reaches ${d.signal.mustReach}°. [Placeholder] thresholds.`, "");
 
+  if (d.countIf?.length) {
+    lines.push("## When a movement counts as a rep", "",
+      `A movement is counted when at least ${Math.round((d.countShare ?? 0.8) * 100)}% of these pass (criteria that can't be measured are left out). Otherwise the app says which ones failed. [Placeholder] values.`, "",
+      ...d.countIf.map(c => `- ${c.name}`), "");
+  }
   lines.push("## What the app checks", "", "| Error | Views | Correct if | Dataset checkpoints | Where the limit comes from |", "|---|---|---|---|---|");
   for (const c of d.checks) {
     const lim = c.limit.min !== undefined ? `≥ ${c.limit.min} ${c.unit}` : `≤ ${c.limit.max} ${c.unit}`;

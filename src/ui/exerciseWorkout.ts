@@ -10,7 +10,7 @@ import { REFERENCE } from "../exercises/generic/reference";
 import { FramingCoach } from "../pose/framing";
 import type { BodyDims } from "../pose/lift";
 import { getProfile } from "../data/api";
-import { openCamera, syncCanvas } from "./camera";
+import { listCameras, openCamera, syncCanvas } from "./camera";
 import { setPendingWorkout } from "./pending";
 import { h, mount, topbar } from "./dom";
 
@@ -56,6 +56,10 @@ export function exerciseWorkoutPage(id: string): () => void {
   const modelSel = h("select", {}, h("option", { value: "lite" }, "Lite (faster)"), h("option", { value: "full" }, "Full (more accurate)"));
   const camSel = h("select", {}, h("option", { value: "user" }, "Front camera"), h("option", { value: "environment" }, "Back camera"));
   modelSel.value = prefs.model; camSel.value = prefs.facing;
+  // Named cameras (e.g. ultra-wide lenses) once the browser has shown their names.
+  let camInfo = "", mirror = false;
+  if (prefs.facing.startsWith("device:")) { camSel.append(h("option", { value: prefs.facing }, "Last used camera")); camSel.value = prefs.facing; }
+  listCameras(camSel, prefs.facing);
   const startBtn = h("button", { class: "btn" }, "Start camera");
   const intro = h("div", { class: "overlay" },
     h("div", { class: "intro" },
@@ -140,7 +144,8 @@ export function exerciseWorkoutPage(id: string): () => void {
     try { landmarker = await getLandmarker(prefs.model); modelName = prefs.model; }
     catch { startBtn.disabled = false; startBtn.textContent = "Start camera"; setStatus("Camera off"); error.textContent = "The pose model couldn't load. Check your connection and try again."; return; }
     try {
-      stream = await openCamera(prefs.facing);
+      const cam = await openCamera(prefs.facing);
+      stream = cam.stream; camInfo = cam.info; mirror = cam.mirror;
       video.srcObject = stream;
       await video.play();
     } catch (e) {
@@ -152,7 +157,7 @@ export function exerciseWorkoutPage(id: string): () => void {
       return;
     }
     canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-    const mirror = prefs.facing === "user";
+    listCameras(camSel, prefs.facing);
     video.classList.toggle("mirror", mirror); canvas.classList.toggle("mirror", mirror);
     coach = new GenericCoach(defWithLimits(), video.videoWidth / video.videoHeight, viewSel.value as CameraView, body);
     startBtn.disabled = false; startBtn.textContent = "Start camera";
@@ -188,7 +193,7 @@ export function exerciseWorkoutPage(id: string): () => void {
       } catch (e) { console.error("Pose detection failed:", e); }
       onFrame(now / 1000 - t0, pose, world);
       frames++;
-      if (now - fpsT > 1000) { fps.textContent = `${frames} frames per second · model: ${modelName}`; frames = 0; fpsT = now; }
+      if (now - fpsT > 1000) { fps.textContent = `${frames} frames per second · model: ${modelName} · ${camInfo}`; frames = 0; fpsT = now; }
     }
     raf = requestAnimationFrame(loop);
   }
@@ -220,6 +225,11 @@ export function exerciseWorkoutPage(id: string): () => void {
       const c = base.checks.find(x => x.code === st.failing[0])!;
       setCue(c.cue, c.severity === "safety" ? "bad" : "warn");
       lastLiveCue = t;
+    }
+    // A real attempt that didn't pass enough rep checks: say why it wasn't counted (not for small fidgets).
+    if (st.rejected && st.rejected.passed / st.rejected.total >= 0.5) {
+      const r = st.rejected;
+      setCue(`Not counted (${r.passed} of ${r.total} rep checks): ${r.failed.join(", ")}`, "warn");
     }
     if (st.event === "start" && base.mode === "reps") setCue(null);
     else if (st.event && typeof st.event === "object") onRep(st.event);

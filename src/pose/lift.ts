@@ -61,6 +61,11 @@ const SCALE_BONES: Bone[] = [
   ...TREE.filter(b => ["torso", "thigh", "shin", "upperArm", "forearm"].includes(b[2])),
   [L.hipL, L.hipR, "hipWidth", 1], [L.shoulderL, L.shoulderR, "shoulderWidth", 1]
 ];
+/**
+ * MediaPipe underestimates depth (by roughly half); a bone may get up to DEPTH_TRUST × the depth share the
+ * model sees, minus a small dead band for its noise. [Placeholder] values, tuned on synthetic data.
+ */
+const DEPTH_TRUST = 2.0, DEPTH_DEADBAND = 0.06;
 /** Points without a bone of their own take the depth of this one. */
 const FOLLOW: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0, 17: 15, 19: 15, 21: 15, 18: 16, 20: 16, 22: 16 };
 
@@ -80,6 +85,7 @@ export class Lifter {
   private samples: BodyDims[] = [];
   private learned: BodyDims | null = null;
   private scale = NaN;
+  private wSmooth: V3[] | null = null;
   constructor(private profile: BodyDims | null = null) {}
 
   get dims(): BodyDims | null { return this.profile ?? this.learned; }
@@ -106,15 +112,26 @@ export class Lifter {
     else this.scale += (sNow > this.scale ? 0.3 : 0.02) * (sNow - this.scale);
     const s = this.scale;
 
-    const wz = (i: number) => i === HIP_MID ? (world[L.hipL].z + world[L.hipR].z) / 2 : i === SH_MID ? (world[L.shoulderL].z + world[L.shoulderR].z) / 2 : world[i].z;
+    // World landmarks, depth smoothed over time (it is the noisiest coordinate).
+    if (!this.wSmooth) this.wSmooth = world.map(p => ({ ...p }));
+    else world.forEach((p, i) => { const q = this.wSmooth![i]; q.x = p.x; q.y = p.y; q.z += 0.25 * (p.z - q.z); });
+    const W = this.wSmooth;
+    const wp = (i: number): V3 => i === HIP_MID ? m3(W[L.hipL], W[L.hipR]) : i === SH_MID ? m3(W[L.shoulderL], W[L.shoulderR]) : W[i];
     const pts: V3[] = Array.from({ length: 33 }, (_, i) => img(i));
     const zOf = new Map<number, number>([[HIP_MID, 0]]);
     for (const [p, c, k, f] of TREE) {
       if (p === SH_MID && !zOf.has(SH_MID)) zOf.set(SH_MID, (zOf.get(L.shoulderL)! + zOf.get(L.shoulderR)!) / 2);
       const a = img(p), b = img(c);
       const l2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
-      const dz = Math.sqrt(Math.max(0, (s * dims[k] * f) ** 2 - l2));
-      const sign = wz(c) - wz(p) >= 0 ? 1 : -1;
+      const full = s * dims[k] * f;
+      // Depth the picture can't account for (the bone looks shorter than it is) ...
+      const missing = Math.sqrt(Math.max(0, full ** 2 - l2));
+      // ... but no more than the pose model itself sees: a few % error in the scale or in a measured length would
+      // otherwise turn a straight leg seen from the front into a bent one (and count reps while standing still).
+      const wa = wp(p), wb = wp(c), wdz = wb.z - wa.z;
+      const seen = Math.abs(wdz) / Math.max(d3(wa, wb), 1e-6);
+      const dz = Math.min(missing, Math.max(0, Math.min(1, DEPTH_TRUST * seen - DEPTH_DEADBAND)) * full);
+      const sign = wdz >= 0 ? 1 : -1;
       zOf.set(c, zOf.get(p)! + sign * dz);
     }
     for (let i = 0; i < 33; i++) {

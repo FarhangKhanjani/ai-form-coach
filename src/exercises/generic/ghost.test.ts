@@ -14,6 +14,7 @@ describe("ghost lines up with a user in the same pose", () => {
         const lifter = new Lifter(AVERAGE_DIMS);
         for (let i = 0; i < 20; i++) { const r = shoot(id, ref.rest, yaw); lifter.lift(r.pose, r.world, 1); }
         const { pose, world } = shoot(id, ref.peak, yaw);
+        for (let i = 0; i < 15; i++) lifter.lift(pose, world, 1);
         const lifted = lifter.lift(pose, world, 1)!;
         const { f, axes } = computeFeatures3D(lifted.pts, pose);
         const g = ghostPose(ref, ref.peak, lifted, axes, f.facing, 1);

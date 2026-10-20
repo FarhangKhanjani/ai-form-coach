@@ -12,6 +12,17 @@ Views: side, front, diagonal (default **side**).
 
 Rep detection: elbow angle; at rest it is low; a rep starts past 110°, ends back past 100°, and only counts if it reaches 150°. [Placeholder] thresholds.
 
+## When a movement counts as a rep
+
+A movement is counted when at least 80% of these pass (criteria that can't be measured are left out). Otherwise the app says which ones failed. [Placeholder] values.
+
+- arms straightened to 150° or more
+- hands above the head at the top
+- hands rose by 40% of torso length
+- both arms pressed
+- took 0.5–10 s
+- feet stayed in place
+
 ## What the app checks
 
 | Error | Views | Correct if | Dataset checkpoints | Where the limit comes from |
